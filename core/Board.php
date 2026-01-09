@@ -16,21 +16,27 @@ namespace nathannau\boardmanager\core;
 class Board
 {
     const NAME = 'table';
+    const TYPE = 'type';
     const URL = 'url';
     const TIME = 'heure';
     const MIN = 'min';
     const MAX = 'max';
     const MJ = 'mj';
     const PLAYER = 'joueur';
+	const TRIGGER_WARNING = 'tg';
+	const DESCRIPTION = 'description';
     
     var $isWithoutTable;
     var $name;
+    var $type;
     var $url;
     var $time;
     var $minPlayer;
     var $maxPlayer;
     var $mj;
     var $players;
+	var $trigger_warning;
+	var $description;
     
     public function __construct($from='')
     {
@@ -47,6 +53,9 @@ class Board
                 case board::NAME:
                     $this->name = $detail[1];
                     $this->isWithoutTable = $this->name=="";
+                    break;
+                case board::TYPE:
+                    $this->type = $detail[1];
                     break;
                 case board::URL:
                     $this->url = $detail[1];
@@ -65,6 +74,12 @@ class Board
                 case board::MJ:
                     $this->mj = $detail[1];
                     break;
+                case board::TRIGGER_WARNING:
+                    $this->trigger_warning = $detail[1];
+                    break;
+                case board::DESCRIPTION:
+                    $this->description = $detail[1];
+                    break;
                 case board::PLAYER:
                     $this->players[] = new Player($detail[1]);
                     break;
@@ -78,15 +93,11 @@ class Board
 		foreach($this->players as $player) $ps .= $player->Hash();
 		$k = ($this->isWithoutTable?'0':'1').'|'.
 			$this->name.'|'.
-//			$this->url.'|'.
 			$this->time.'|'.
 			$this->minPlayer.'|'.
 			$this->maxPlayer.'|'.
 			$this->mj.'|'.
 			$ps;
-//		echo '<pre>'.$k.'</pre>';
-//		echo '<pre>'.strlen($k).'</pre>';
-//		echo '<pre>'.md5($k).'</pre>';
 		return md5($k);
 	}
 	
@@ -100,7 +111,8 @@ class Board
 		$isBot = $user->data['is_bot'];
 		$hash = $this->Hash();
 
-        $ret = "";
+        $ret = '';
+        $ret .= '<div class="board" style="border: 1px solid #ccc; padding: 10px">';
         if ($this->isWithoutTable)
 		{
 			$nbPlayer = 0;
@@ -122,9 +134,12 @@ class Board
             if ($this->url!='')
                 $name = '<a href="'.$this->url.'">'.$name.'</a>';
 
+			$types = ["os"=>"One shot","co"=>"Compagne ouverte","cf"=>"Compagne fermée","ts"=>"Table de secours",];
+			$type = isset($types[$this->type]) ? '('. $types[$this->type] .')' :'';
             $ret .= '<span style="font-weight: bold"><span style="text-decoration: underline">'.
 				$name.
 				'</span> '.
+				'<span class="type">'.$type.'</span> '.
 				$this->minPlayer
 				.'-'.
 				$this->maxPlayer
@@ -137,7 +152,16 @@ class Board
 					$helper->route('nathannau_boardmanager_register', array('post'=>$postId, 'hash'=>$hash))
 					.'">m\'inscrire a la table</a>';
 			$ret .= '<br/>';
-			
+
+			if (trim($this->description)!="")
+				$ret .= '<i>'.$this->description.'</i><br/>';
+
+			if (trim($this->trigger_warning)!="")
+			{
+				$ret .= '<b style="color:#800; display: flex; align-items: center;"><svg height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm302-40q17 0 28.5-11.5T520-280q0-17-11.5-28.5T480-320q-17 0-28.5 11.5T440-280q0 17 11.5 28.5T480-240Zm-40-120h80v-200h-80v200Zm40-100Z"/></svg> '.
+				$this->trigger_warning.'</b>';
+			}
+
 			$ret .= '<span style="font-weight: bold">'.
 				$this->mj.
 				'</span>';
@@ -171,7 +195,7 @@ class Board
 			if ($inRed) $ret .= '</span>';
 			$ret .= '<br/>';
 		}
-
+		$ret .= '</div>';
         return $ret;
     }
 	
@@ -181,11 +205,14 @@ class Board
         if (!$this->isWithoutTable)
         {
 			$ret .= board::NAME . ':' . $this->name . "\n";
+			$ret .= board::TYPE . ':' . $this->type . "\n";
 			$ret .= board::URL . ':' . $this->url . "\n";
 			$ret .= board::TIME . ':' . $this->time . "\n";
 			$ret .= board::MIN . ':' . $this->minPlayer . "\n";
 			$ret .= board::MAX . ':' . $this->maxPlayer . "\n";
 			$ret .= board::MJ . ':' . $this->mj . "\n";
+			$ret .= board::TRIGGER_WARNING . ':' . $this->trigger_warning . "\n";
+			$ret .= board::DESCRIPTION . ':' . $this->description . "\n";
 		}
 		foreach ($this->players as $player)
 			$ret .= board::PLAYER . ':' . $player->ToBBCode() . "\n";

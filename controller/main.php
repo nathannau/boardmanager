@@ -150,11 +150,23 @@ class main
 		$board = new Board();
 		$board->isWithoutTable = false;
 		$board->name = $this->request->variable('name', '', true, request_interface::POST);
+		$board->type = $this->request->variable('type', '', true, request_interface::POST);
 		$board->url = $this->request->variable('url', '', true, request_interface::POST);
 		$board->time = $this->request->variable('time', '21h', true, request_interface::POST);
 		$board->minPlayer = $this->request->variable('min', '3', true, request_interface::POST);
 		$board->maxPlayer = $this->request->variable('max', '5', true, request_interface::POST);
+		$board->trigger_warning = $this->request->variable('trigger_warning', '', true, request_interface::POST);
+		$board->description = $this->request->variable('description', '', true, request_interface::POST);
 		$board->mj = $this->user->data['username'];
+		$preinscription = $this->request->variable('preinscription', '', true, request_interface::POST);
+
+		$date = date("dmY");
+		foreach(explode("\n", $preinscription) as $player)
+		{
+			$player = trim($player);
+			if ($player!="")
+				$board->players[] = new Player($player.';'.$date.';*');
+		}
 
 		if ($board->IsValid())
 		{
@@ -190,7 +202,7 @@ class main
 			die();
 		}
 		
-		$this->template->assign_vars(array('board' => $board));
+		$this->template->assign_vars(array('board' => $board, 'preinscription' => $preinscription));
 		$this->template->set_filenames(array(
 			'body'	=> "@nathannau_boardmanager/open.html",
 		));
