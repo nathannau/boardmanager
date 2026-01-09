@@ -1,0 +1,25 @@
+{
+	"name": "nathannau/boardmanager",
+	"type": "phpbb-extension",
+	"description": "Une extension pour phpBB pour automatiser la gestion de la mise en place des tables.",
+	"homepage": "https://www.phpbb.com",
+	"version": "1.1",
+	"keywords": ["phpbb", "extension", "la guilde", "mise en place des tables"],
+	"license": "GPL-2.0",
+	"authors": [
+		{
+			"name": "Nathan NAU",
+			"email": "nathannau@gmail.com",
+			"role": "Lead Developer"
+		}
+	],
+	"require": {
+		"php": ">=5.3.3"
+	},
+	"extra": {
+		"display-name": "Board Manager Extension",
+		"soft-require": {
+			"phpbb/phpbb": ">=3.3.0"
+		}
+	}
+}

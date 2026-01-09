@@ -1,0 +1,32 @@
+<!-- INCLUDE overall_header.html --> <div style="margin:0px 15px; display:block">
+    <h2>Ouverture de table</h2>
+    <form method="post">
+        <fieldset>
+            <dl>
+                <dt><label for="name">Nom du jeu * : </label></dt>
+                <dd><input type="text" name="name" id="name" placeholder="" value="{{ board.name }}" /></dd>
+            </dl>
+            <dl>
+                <dt><label for="url">Url du descriptif : </label></dt>
+                <dd><input type="url" name="url" id="url" placeholder="http://www.laguilde-poitiers.com/" value="{{ board.url }}" /></dd>
+            </dl>
+            <dl>
+                <dt><label for="time">Heure de début * : </label></dt>
+                <dd><input type="text" name="time" id="time" placeholder="21h" value="{{ board.time }}" /></dd>
+            </dl>
+            <dl>
+                <dt><label for="min">Nombre de joueurs minimum * : </label></dt>
+                <dd><input type="number" name="min" id="min" placeholder="3" min="1" max="20" value="{{ board.minPlayer }}" /></dd>
+            </dl>
+            <dl>
+                <dt><label for="max">Nombre de joueurs maximum * : </label></dt>
+                <dd><input type="number" name="max" id="max" placeholder="5" min="1" max="20" value="{{ board.maxPlayer }}" /></dd>
+            </dl>
+            <input type="submit" value="Ouvrir la table" /><br/>
+            <i>* informations obligatoires</i>
+            
+    </form> </div> <!-- INCLUDE jumpbox.html --> <!-- IF S_DISPLAY_ONLINE_LIST -->
+    <div class="stat-block online-list">
+        <h3><!-- IF U_VIEWONLINE --><a href="{U_VIEWONLINE}">{L_WHO_IS_ONLINE}</a><!-- ELSE -->{L_WHO_IS_ONLINE}<!-- ENDIF --></h3>
+        <p>{LOGGED_IN_USER_LIST}</p>
+    </div> <!-- ENDIF --> <!-- INCLUDE overall_footer.html -->

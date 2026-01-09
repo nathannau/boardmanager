@@ -1,0 +1,25 @@
+services:
+    nathannau.boardmanager.boardmanager:
+        class: nathannau\boardmanager\core\BoardManager
+        arguments:
+            - '@dbal.conn'
+            - '@user'
+            - '@request'
+
+    nathannau.boardmanager.listener:
+        class: nathannau\boardmanager\events\bbcode_listener
+        arguments:
+            - '@nathannau.boardmanager.boardmanager'
+        tags:
+            - { name: event.listener }
+
+    nathannau.boardmanager.main:
+        class: nathannau\boardmanager\controller\main
+        arguments:
+            - '@nathannau.boardmanager.boardmanager'
+            - '@dbal.conn'
+            - '@user'
+            - '@request'
+            - '@template'
+            #- '@form.factory'
+            
