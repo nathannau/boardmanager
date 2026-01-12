@@ -134,7 +134,7 @@ class Board
             if ($this->url!='')
                 $name = '<a href="'.$this->url.'">'.$name.'</a>';
 
-			$types = ["os"=>"One shot","co"=>"Compagne ouverte","cf"=>"Compagne fermée","ts"=>"Table de secours",];
+			$types = ["os"=>"One shot","co"=>"Campagne ouverte","cf"=>"Campagne fermée","ts"=>"Table de secours",];
 			$type = isset($types[$this->type]) ? '('. $types[$this->type] .')' :'';
             $ret .= '<span style="font-weight: bold"><span style="text-decoration: underline">'.
 				$name.
