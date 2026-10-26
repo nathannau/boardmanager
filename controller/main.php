@@ -277,6 +277,11 @@ class main
 		$topic = $this->db->sql_fetchrow();
 		$this->db->sql_freeresult($result);
 		
+                $sql = 'SELECT * FROM ' . FORUMS_TABLE . ' WHERE forum_id = '.$topic['forum_id'].';';
+                $result = $this->db->sql_query($sql);
+                $forum = $this->db->sql_fetchrow();
+                $this->db->sql_freeresult($result);
+
 		$data = array(
 			'post_id' => $post['post_id'],
 		//	'poster_id' => $this->user->data['user_id'],
@@ -319,6 +324,17 @@ class main
 
 			// 3.1-dev, overwrites force_approve_state
 			'force_visibility'            => true, // Allow the post to be submitted without going into unapproved queue, or make it be deleted
+
+			// 3.?.?
+			'topic_posts_approved' => $topic['topic_posts_approved'],
+                        'topic_posts_unapproved' => $topic['topic_posts_unapproved'],
+                        'topic_posts_softdeleted' => $topic['topic_posts_softdeleted'],
+
+                        'topic_first_post_id' => $topic['topic_first_post_id'],
+                        'topic_last_post_id' => $topic['topic_last_post_id'],
+                        'topic_title' => $topic['topic_title'],
+
+                        'forum_name' => $forum['forum_name'],
 		);
 		return submit_post('edit',  $post['post_subject'],  $this->user->data['username'],  $topic['topic_type'], $poll, $data, true);
 	}
@@ -338,6 +354,11 @@ class main
 		$topic = $this->db->sql_fetchrow();
 		$this->db->sql_freeresult($result);
 		
+                $sql = 'SELECT * FROM ' . FORUMS_TABLE . ' WHERE forum_id = '.$topic['forum_id'].';';
+                $result = $this->db->sql_query($sql);
+                $forum = $this->db->sql_fetchrow();
+                $this->db->sql_freeresult($result);
+
 		$isLast = $post['poster_id']==$this->user->data['user_id'];
 		
 		$data = array(
@@ -382,6 +403,18 @@ class main
 
 			// 3.1-dev, overwrites force_approve_state
 			'force_visibility'            => true, // Allow the post to be submitted without going into unapproved queue, or make it be deleted
+
+                        // 3.?.?
+                        'topic_posts_approved' => $topic['topic_posts_approved'],
+                        'topic_posts_unapproved' => $topic['topic_posts_unapproved'],
+                        'topic_posts_softdeleted' => $topic['topic_posts_softdeleted'],
+
+                        'topic_first_post_id' => $topic['topic_first_post_id'],
+                        'topic_last_post_id' => $topic['topic_last_post_id'],
+                        'topic_title' => $topic['topic_title'],
+
+                        'forum_name' => $forum['forum_name'],
+
 		);
 		
 		$subject = $post['post_subject'];

@@ -209,11 +209,15 @@ class BoardManager
 		$second_pass_match = str_replace('$uid', $uid, $this->second_pass_match);
 		
 		$index = 0;
+//echo '<pre>'.htmlentities($text);
+//echo htmlentities(print_r($allBoards,true));
 		$text = preg_replace_callback($second_pass_match, function($match) use ($uid, &$index, $allBoards) 
 		{
 			$boards = $allBoards[$index++];
 			return '[boardmanager '.$boards->GetDateAsString().':'.$uid.']'.$boards->ToBBCode().'[/boardmanager:'.$uid.']';
 		}, $text);
+//echo "\n------------------------\n".htmlentities($text);
+//die();
 		return $text;
 	}
 

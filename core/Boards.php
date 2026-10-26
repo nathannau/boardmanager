@@ -120,15 +120,15 @@ class Boards
 	}
 
 	public function ToBBCode()
-    {
+	{
 		$ret = "";
 		$isFirst = true;
-        foreach($this->boards as $board)
-        {
+		foreach($this->boards as $board)
+		{
 			if (!$isFirst) $ret .= Boards::SEPARATOR."\n"; 
 			$ret .= $board->ToBBCode();
 			$isFirst = false;
-        }
+		}
 		return $ret;
 	}
 
