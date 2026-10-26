@@ -42,7 +42,6 @@ $lang = array_merge($lang, array(
 	'BM2_ADD_PLAYER'				=> 'ajouter un joueur',
 	'BM2_REMOVE_PLAYER'				=> 'retirer',
 	'BM2_VALIDATE'					=> 'valider la pré-inscription',
-	'BM2_GUEST'						=> '(hors forum)',
 	'BM2_TRIGGER_WARNING'			=> 'Trigger warning',
 	'BM2_REMAINING_MIN'				=> array(
 		0	=> 'Il reste %d place à remplir pour lancer toutes les tables',

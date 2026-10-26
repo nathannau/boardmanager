@@ -13,7 +13,6 @@
 /* prosilver affiche les liens en inline-block : le style du parent ne s'y propage pas */
 .bm2-late, .bm2-late a { color: #880000; }
 .bm2-removed, .bm2-removed a { text-decoration: line-through; }
-.bm2-guest { font-style: italic; font-size: 0.9em; opacity: 0.8; }
 .bm2-open, .bm2-remaining { margin-top: 0.5em; }
 .bm2-form dl dd input[type="text"], .bm2-form dl dd input[type="url"], .bm2-form dl dd textarea { width: 300px; max-width: 100%; }
 .bm2-form dl dd textarea { height: 100px; }

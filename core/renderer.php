@@ -164,7 +164,6 @@ class renderer
 				'DESCRIPTION'		=> $table['description'],
 				'TRIGGER_WARNING'	=> $table['trigger_warning'],
 				'MJ'				=> $this->username_html($table['mj_user_id'], $table['mj_username'], $users),
-				'MJ_GUEST'			=> !$table['mj_user_id'] && $table['mj_username'] !== '',
 				'U_REGISTER'		=> ($logged && !$engaged && !$full && $can_add)
 					? $this->action_link('nathannau_boardmanager2_register', array('session' => $session_id, 'table' => $table_id))
 					: '',
@@ -201,7 +200,6 @@ class renderer
 
 			$rows[] = array(
 				'NAME'			=> $this->username_html($player['user_id'], $player['username'], $users),
-				'GUEST'			=> $guest,
 				'REMOVED'		=> !$active,
 				'TEMPORARY'		=> (bool) $player['temporary'],
 				'LATE'			=> $this->rules->is_late($player, $state['session']),
