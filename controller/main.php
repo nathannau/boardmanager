@@ -76,22 +76,23 @@ class main
 	}
 
 	/**
-	* Création ou modification de la date de la séance d'un message
+	* Création ou modification de la date de la séance d'un sujet
 	*/
-	public function configure($post)
+	public function configure($topic)
 	{
 		$this->init();
-		$post_row = $this->load_post($post);
-		if (strpos($post_row['post_text'], '<BOARDMANAGER2>') === false)
+		$topic = $this->load_topic($topic);
+		$marker_post = $this->renderer->marker_post($topic['topic_id']);
+		if (!$marker_post)
 		{
 			$this->error('BM2_ERROR_NO_MARKER');
 		}
-		if (!$this->is_manager() && (int) $post_row['poster_id'] !== $this->user_id())
+		if (!$this->is_manager() && $marker_post['poster_id'] !== $this->user_id())
 		{
 			$this->error('BM2_ERROR_NOT_ALLOWED');
 		}
 
-		$session = $this->store->get_session_by_post($post_row['post_id']);
+		$session = $this->store->get_session_by_topic($topic['topic_id']);
 		$date = $this->request->variable('session_date', $session ? $this->rules->format_date($session['session_date']) : '');
 		$errors = array();
 
@@ -109,19 +110,19 @@ class main
 			else
 			{
 				$this->begin();
-				$session = $this->store->get_session_by_post($post_row['post_id']);
+				$session = $this->store->get_session_by_topic($topic['topic_id']);
 				if ($session)
 				{
 					$this->store->update_session_date($session['session_id'], $timestamp);
 				}
 				else
 				{
-					$this->store->create_session($post_row['post_id'], $post_row['topic_id'], $timestamp, $this->user_id());
+					$this->store->create_session($topic['topic_id'], $timestamp, $this->user_id());
 				}
 				$this->commit();
 
-				$this->reply($post_row['topic_id'], $this->language->lang('BM2_AUTO_CONFIGURE', $this->renderer->format_session_date($timestamp)));
-				redirect($this->post_url($post_row['post_id']));
+				$this->reply($topic['topic_id'], $this->language->lang('BM2_AUTO_CONFIGURE', $this->renderer->format_session_date($timestamp)));
+				redirect($this->back_url);
 			}
 		}
 
@@ -129,7 +130,7 @@ class main
 		$this->template->assign_vars(array(
 			'BM2_ERRORS'		=> $errors,
 			'BM2_SESSION_DATE'	=> $date,
-			'U_BM2_BACK'		=> $this->post_url($post_row['post_id']),
+			'U_BM2_BACK'		=> $this->back_url,
 		));
 		return $this->helper->render('@nathannau_boardmanager2/configure.html', $this->language->lang('BM2_CONFIGURE_TITLE'));
 	}
@@ -140,7 +141,7 @@ class main
 	public function open($session)
 	{
 		$this->init();
-		list($session, $post_row) = $this->load_session($session);
+		list($session, $topic) = $this->load_session($session);
 		$manager = $this->is_manager();
 
 		$data = array(
@@ -214,7 +215,7 @@ class main
 				$this->commit();
 
 				$message = $this->language->lang('BM2_AUTO_OPEN', $data['name'], $data['start_time'], $data['min_players'], $data['max_players']);
-				redirect($this->reply($post_row['topic_id'], $message));
+				redirect($this->reply($topic['topic_id'], $message));
 			}
 		}
 
@@ -226,7 +227,7 @@ class main
 			'BM2_MANAGER'		=> $manager,
 			'BM2_MJ'			=> $mj_name,
 			'BM2_PREREGISTRATION'	=> $preregistration,
-			'U_BM2_BACK'		=> $this->post_url($post_row['post_id']),
+			'U_BM2_BACK'		=> $this->back_url,
 		));
 		return $this->helper->render('@nathannau_boardmanager2/open.html', $this->language->lang('BM2_OPEN_TITLE'));
 	}
@@ -238,7 +239,7 @@ class main
 	{
 		$this->init();
 		$this->check_link('nathannau_boardmanager2_register', array('session' => $session, 'table' => $table));
-		list($session, $post_row) = $this->load_session($session);
+		list($session, $topic) = $this->load_session($session);
 		$table_id = (int) $table;
 		$user_id = $this->user_id();
 
@@ -299,7 +300,7 @@ class main
 		$this->rules->register_user($state, $table_id, $user_id, $this->user->data['username'], $user_id);
 		$this->commit();
 
-		redirect($this->reply($post_row['topic_id'], $message));
+		redirect($this->reply($topic['topic_id'], $message));
 	}
 
 	/**
@@ -309,7 +310,7 @@ class main
 	{
 		$this->init();
 		$this->check_link('nathannau_boardmanager2_unregister', array('session' => $session, 'table' => $table));
-		list($session, $post_row) = $this->load_session($session);
+		list($session, $topic) = $this->load_session($session);
 		$table_id = (int) $table;
 
 		$this->begin();
@@ -329,7 +330,7 @@ class main
 		$message = $table_id
 			? $this->language->lang('BM2_AUTO_UNREGISTER_TABLE', $state['tables'][$table_id]['name'], $this->mj_name($state['tables'][$table_id]))
 			: $this->language->lang('BM2_AUTO_UNREGISTER_NO_TABLE');
-		redirect($this->reply($post_row['topic_id'], $message));
+		redirect($this->reply($topic['topic_id'], $message));
 	}
 
 	/**
@@ -339,12 +340,13 @@ class main
 	{
 		$this->init();
 		$this->check_link('nathannau_boardmanager2_cancel', array('table' => $table));
-		list($table, $session, $post_row) = $this->load_table($table);
+		list($table, $session, $topic) = $this->load_table($table);
 		$this->check_table_rights($table);
 
 		$this->begin();
+		$state = $this->rules->load($session);
 		$this->store->cancel_table($table['table_id']);
-		$moved = $this->store->move_players_to_no_table($table['table_id']);
+		$moved = $this->store->move_players_to_no_table($table['table_id'], $state['no_table_id']);
 		$this->commit();
 
 		$lines = array($this->language->lang('BM2_AUTO_CANCEL', $table['name'], $table['start_time'], $table['min_players'], $table['max_players']));
@@ -352,7 +354,7 @@ class main
 		{
 			$lines[] = $this->language->lang('BM2_AUTO_MOVED', $player['username']);
 		}
-		redirect($this->reply($post_row['topic_id'], implode("\n", $lines)));
+		redirect($this->reply($topic['topic_id'], implode("\n", $lines)));
 	}
 
 	/**
@@ -361,7 +363,7 @@ class main
 	public function addplayer($table)
 	{
 		$this->init();
-		list($table, $session, $post_row) = $this->load_table($table);
+		list($table, $session, $topic) = $this->load_table($table);
 		$this->check_table_rights($table);
 		$manager = $this->is_manager();
 		$name = trim($this->request->variable('player', '', true));
@@ -409,7 +411,7 @@ class main
 				}
 				$this->commit();
 
-				redirect($this->reply($post_row['topic_id'], $this->language->lang('BM2_AUTO_ADD_PLAYER', $name, $table['name'], $this->mj_name($table))));
+				redirect($this->reply($topic['topic_id'], $this->language->lang('BM2_AUTO_ADD_PLAYER', $name, $table['name'], $this->mj_name($table))));
 			}
 		}
 
@@ -418,7 +420,7 @@ class main
 			'BM2_ERRORS'		=> $errors,
 			'BM2_TABLE_NAME'	=> $table['name'],
 			'BM2_PLAYER'		=> $name,
-			'U_BM2_BACK'		=> $this->post_url($post_row['post_id']),
+			'U_BM2_BACK'		=> $this->back_url,
 		));
 		return $this->helper->render('@nathannau_boardmanager2/addplayer.html', $this->language->lang('BM2_ADDPLAYER_TITLE', $table['name']));
 	}
@@ -435,9 +437,16 @@ class main
 		{
 			$this->error('BM2_ERROR_NOT_FOUND');
 		}
-		list($session, $post_row) = $this->load_session($player['session_id']);
-
-		$table = $player['table_id'] ? $this->store->get_table($player['table_id']) : null;
+		$table = $this->store->get_table($player['table_id']);
+		if (!$table || $table['cancelled'])
+		{
+			$this->error('BM2_ERROR_NOT_FOUND');
+		}
+		list($session, $topic) = $this->load_session($table['session_id']);
+		if ($table['no_table'])
+		{
+			$table = null;
+		}
 		$is_mj = $table && (int) $table['mj_user_id'] === $this->user_id();
 		if (!$this->is_manager() && !($is_mj && !$player['user_id']))
 		{
@@ -451,7 +460,7 @@ class main
 		$message = $table
 			? $this->language->lang('BM2_AUTO_REMOVE_PLAYER', $player['username'], $table['name'], $this->mj_name($table))
 			: $this->language->lang('BM2_AUTO_REMOVE_PLAYER_NO_TABLE', $player['username']);
-		redirect($this->reply($post_row['topic_id'], $message));
+		redirect($this->reply($topic['topic_id'], $message));
 	}
 
 	// Contrôles communs
@@ -502,28 +511,28 @@ class main
 	}
 
 	/**
-	* Message lisible par l'utilisateur (droit de lecture du forum)
+	* Sujet lisible par l'utilisateur (droit de lecture du forum)
 	*/
-	protected function load_post($post_id)
+	protected function load_topic($topic_id)
 	{
-		$sql = 'SELECT p.*, t.topic_first_post_id
-			FROM ' . POSTS_TABLE . ' p
-			JOIN ' . TOPICS_TABLE . ' t ON t.topic_id = p.topic_id
-			WHERE p.post_id = ' . (int) $post_id;
+		$sql = 'SELECT * FROM ' . TOPICS_TABLE . ' WHERE topic_id = ' . (int) $topic_id;
 		$result = $this->db->sql_query($sql);
-		$post_row = $this->db->sql_fetchrow($result);
+		$topic = $this->db->sql_fetchrow($result);
 		$this->db->sql_freeresult($result);
 
-		if (!$post_row || !$this->auth->acl_get('f_read', $post_row['forum_id']))
+		if (!$topic || !$this->auth->acl_get('f_read', $topic['forum_id']))
 		{
 			$this->error('BM2_ERROR_NOT_FOUND');
 		}
-		$this->back_url = $this->post_url($post_row['post_id']);
-		return $post_row;
+		$marker_post = $this->renderer->marker_post($topic['topic_id']);
+		$this->back_url = $marker_post
+			? append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 'p=' . $marker_post['post_id']) . '#p' . $marker_post['post_id']
+			: append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 't=' . (int) $topic['topic_id']);
+		return $topic;
 	}
 
 	/**
-	* @return array(session, post)
+	* @return array(session, topic)
 	*/
 	protected function load_session($session_id)
 	{
@@ -532,23 +541,23 @@ class main
 		{
 			$this->error('BM2_ERROR_NOT_FOUND');
 		}
-		return array($session, $this->load_post($session['post_id']));
+		return array($session, $this->load_topic($session['topic_id']));
 	}
 
 	/**
 	* Table non annulée
 	*
-	* @return array(table, session, post)
+	* @return array(table, session, topic)
 	*/
 	protected function load_table($table_id)
 	{
 		$table = $this->store->get_table($table_id);
-		if (!$table || $table['cancelled'])
+		if (!$table || $table['cancelled'] || $table['no_table'])
 		{
 			$this->error('BM2_ERROR_NOT_FOUND');
 		}
-		list($session, $post_row) = $this->load_session($table['session_id']);
-		return array($table, $session, $post_row);
+		list($session, $topic) = $this->load_session($table['session_id']);
+		return array($table, $session, $topic);
 	}
 
 	protected function mj_name(array $table)
@@ -564,11 +573,6 @@ class main
 			$types[$type] = $this->language->lang('BM2_TYPE_' . strtoupper($type));
 		}
 		return $types;
-	}
-
-	protected function post_url($post_id)
-	{
-		return append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 'p=' . (int) $post_id) . '#p' . (int) $post_id;
 	}
 
 	protected function begin()

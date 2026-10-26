@@ -36,6 +36,9 @@ class renderer
 	/** @var \phpbb\db\driver\driver_interface */
 	protected $db;
 
+	/** @var array cache par requête de marker_post() */
+	protected $marker_posts = array();
+
 	public function __construct(store $store, rules $rules, \phpbb\controller\helper $helper, \phpbb\template\template $template, \phpbb\user $user, \phpbb\language\language $language, \phpbb\db\driver\driver_interface $db)
 	{
 		$this->db = $db;
@@ -66,11 +69,34 @@ class renderer
 	}
 
 	/**
-	* @param int $post_id
-	* @param int $poster_id auteur du message
+	* Premier message du sujet contenant le marqueur : c'est lui qui affiche la séance
+	*
+	* @return array|null post_id, poster_id
+	*/
+	public function marker_post($topic_id)
+	{
+		$topic_id = (int) $topic_id;
+		if (!array_key_exists($topic_id, $this->marker_posts))
+		{
+			$sql = 'SELECT post_id, poster_id
+				FROM ' . POSTS_TABLE . '
+				WHERE topic_id = ' . $topic_id . '
+					AND post_text ' . $this->db->sql_like_expression($this->db->get_any_char() . '<BOARDMANAGER2>' . $this->db->get_any_char()) . '
+				ORDER BY post_id';
+			$result = $this->db->sql_query_limit($sql, 1);
+			$row = $this->db->sql_fetchrow($result);
+			$this->db->sql_freeresult($result);
+			$this->marker_posts[$topic_id] = $row ? array_map('intval', $row) : null;
+		}
+		return $this->marker_posts[$topic_id];
+	}
+
+	/**
+	* @param int $topic_id
+	* @param int $poster_id auteur du message portant le marqueur
 	* @return string HTML
 	*/
-	public function render($post_id, $poster_id)
+	public function render($topic_id, $poster_id)
 	{
 		$this->language->add_lang('common', 'nathannau/boardmanager2');
 
@@ -81,11 +107,11 @@ class renderer
 		$data = array(
 			'CONFIGURED'	=> false,
 			'U_CONFIGURE'	=> ($logged && ($manager || $user_id === (int) $poster_id))
-				? $this->helper->route('nathannau_boardmanager2_configure', array('post' => (int) $post_id))
+				? $this->helper->route('nathannau_boardmanager2_configure', array('topic' => (int) $topic_id))
 				: '',
 		);
 
-		$session = $this->store->get_session_by_post($post_id);
+		$session = $this->store->get_session_by_topic($topic_id);
 		if ($session)
 		{
 			$data = array_merge($data, $this->session_data($session, $user_id, $logged, $manager));
@@ -138,7 +164,7 @@ class renderer
 				'DESCRIPTION'		=> $table['description'],
 				'TRIGGER_WARNING'	=> $table['trigger_warning'],
 				'MJ'				=> $this->username_html($table['mj_user_id'], $table['mj_username'], $users),
-				'MJ_GUEST'			=> !$table['mj_user_id'],
+				'MJ_GUEST'			=> !$table['mj_user_id'] && $table['mj_username'] !== '',
 				'U_REGISTER'		=> ($logged && !$engaged && !$full && $can_add)
 					? $this->action_link('nathannau_boardmanager2_register', array('session' => $session_id, 'table' => $table_id))
 					: '',

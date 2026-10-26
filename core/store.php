@@ -13,6 +13,10 @@ namespace nathannau\boardmanager2\core;
 /**
 * Accès aux tables bm2_sessions, bm2_tables et bm2_players.
 *
+* Une séance par sujet. Le « sans table » d'une séance est une ligne de
+* bm2_tables (no_table = 1), créée avec la séance : un joueur n'est donc
+* rattaché qu'à une table.
+*
 * Les écritures ne gèrent pas elles-mêmes les transactions : chaque action
 * du contrôleur les encadre avec begin() / commit().
 */
@@ -55,18 +59,19 @@ class store
 		return $this->fetch_one('SELECT * FROM ' . $this->sessions_table . ' WHERE session_id = ' . (int) $session_id);
 	}
 
-	public function get_session_by_post($post_id)
+	public function get_session_by_topic($topic_id)
 	{
-		return $this->fetch_one('SELECT * FROM ' . $this->sessions_table . ' WHERE post_id = ' . (int) $post_id);
+		return $this->fetch_one('SELECT * FROM ' . $this->sessions_table . ' WHERE topic_id = ' . (int) $topic_id);
 	}
 
 	/**
+	* Crée la séance et sa ligne « sans table »
+	*
 	* @return int session_id
 	*/
-	public function create_session($post_id, $topic_id, $session_date, $created_by, $source = 'v2', $created_time = null)
+	public function create_session($topic_id, $session_date, $created_by, $source = 'v2', $created_time = null)
 	{
 		$data = array(
-			'post_id'		=> (int) $post_id,
 			'topic_id'		=> (int) $topic_id,
 			'session_date'	=> (int) $session_date,
 			'created_by'	=> (int) $created_by,
@@ -74,7 +79,9 @@ class store
 			'source'		=> $source,
 		);
 		$this->db->sql_query('INSERT INTO ' . $this->sessions_table . ' ' . $this->db->sql_build_array('INSERT', $data));
-		return (int) $this->db->sql_nextid();
+		$session_id = (int) $this->db->sql_nextid();
+		$this->add_no_table($session_id);
+		return $session_id;
 	}
 
 	public function update_session_date($session_id, $session_date)
@@ -85,12 +92,17 @@ class store
 	}
 
 	/**
-	* Supprime les tables et joueurs d'une séance (réimport v1)
+	* Vide une séance (réimport v1) : il ne reste que son « sans table », vide
 	*/
 	public function delete_session_content($session_id)
 	{
-		$this->db->sql_query('DELETE FROM ' . $this->players_table . ' WHERE session_id = ' . (int) $session_id);
-		$this->db->sql_query('DELETE FROM ' . $this->tables_table . ' WHERE session_id = ' . (int) $session_id);
+		$table_ids = array_map('intval', array_column($this->get_tables($session_id, true), 'table_id'));
+		if ($table_ids)
+		{
+			$this->db->sql_query('DELETE FROM ' . $this->players_table . ' WHERE ' . $this->db->sql_in_set('table_id', $table_ids));
+			$this->db->sql_query('DELETE FROM ' . $this->tables_table . ' WHERE ' . $this->db->sql_in_set('table_id', $table_ids));
+		}
+		$this->add_no_table($session_id);
 	}
 
 	// Tables
@@ -101,7 +113,7 @@ class store
 	}
 
 	/**
-	* Tables d'une séance, dans l'ordre d'ouverture
+	* Tables d'une séance (« sans table » compris), dans l'ordre d'ouverture
 	*/
 	public function get_tables($session_id, $include_cancelled = false)
 	{
@@ -119,23 +131,57 @@ class store
 	public function add_table(array $data)
 	{
 		$data = array_merge(array(
+			'no_table'			=> 0,
 			'cancelled'			=> 0,
 			'cancelled_time'	=> 0,
 			'created_time'		=> time(),
 		), $data);
-		foreach (array('session_id', 'min_players', 'max_players', 'mj_user_id', 'cancelled', 'cancelled_time', 'created_time') as $key)
+		foreach (array('session_id', 'no_table', 'min_players', 'max_players', 'mj_user_id', 'cancelled', 'cancelled_time', 'created_time') as $key)
 		{
 			$data[$key] = (int) $data[$key];
 		}
+		foreach (array('name', 'type', 'url', 'start_time', 'mj_username', 'trigger_warning', 'description') as $key)
+		{
+			$data[$key] = $this->text($data[$key], !in_array($key, array('url', 'trigger_warning', 'description')));
+		}
 		$this->db->sql_query('INSERT INTO ' . $this->tables_table . ' ' . $this->db->sql_build_array('INSERT', $data));
 		return (int) $this->db->sql_nextid();
+	}
+
+	protected function add_no_table($session_id)
+	{
+		return $this->add_table(array(
+			'session_id'		=> $session_id,
+			'no_table'			=> 1,
+			'name'				=> '',
+			'type'				=> '',
+			'url'				=> '',
+			'start_time'		=> '',
+			'min_players'		=> 0,
+			'max_players'		=> 0,
+			'mj_user_id'		=> 0,
+			'mj_username'		=> '',
+			'trigger_warning'	=> '',
+			'description'		=> '',
+		));
+	}
+
+	/**
+	* @return int table_id du « sans table » de la séance
+	*/
+	public function get_no_table_id($session_id)
+	{
+		$row = $this->fetch_one('SELECT table_id FROM ' . $this->tables_table . '
+			WHERE session_id = ' . (int) $session_id . ' AND no_table = 1');
+		return $row ? (int) $row['table_id'] : 0;
 	}
 
 	public function cancel_table($table_id)
 	{
 		$this->db->sql_query('UPDATE ' . $this->tables_table . '
 			SET cancelled = 1, cancelled_time = ' . time() . '
-			WHERE table_id = ' . (int) $table_id);
+			WHERE table_id = ' . (int) $table_id . '
+				AND no_table = 0');
 	}
 
 	// Joueurs
@@ -146,14 +192,16 @@ class store
 	}
 
 	/**
-	* Joueurs d'une séance (toutes tables confondues, table_id = 0 pour le sans table),
-	* dans l'ordre d'inscription
+	* Joueurs des tables non annulées d'une séance, dans l'ordre d'inscription
 	*/
 	public function get_players($session_id)
 	{
-		return $this->fetch_all('SELECT * FROM ' . $this->players_table . '
-			WHERE session_id = ' . (int) $session_id . '
-			ORDER BY player_id');
+		return $this->fetch_all('SELECT p.*
+			FROM ' . $this->players_table . ' p
+			JOIN ' . $this->tables_table . ' t ON t.table_id = p.table_id
+			WHERE t.session_id = ' . (int) $session_id . '
+				AND t.cancelled = 0
+			ORDER BY p.player_id');
 	}
 
 	/**
@@ -163,17 +211,17 @@ class store
 	public function add_player(array $data)
 	{
 		$data = array_merge(array(
-			'table_id'		=> 0,
 			'user_id'		=> 0,
 			'added_by'		=> 0,
 			'register_date'	=> time(),
 			'removed'		=> 0,
 			'temporary'		=> 0,
 		), $data);
-		foreach (array('session_id', 'table_id', 'user_id', 'added_by', 'register_date', 'removed', 'temporary') as $key)
+		foreach (array('table_id', 'user_id', 'added_by', 'register_date', 'removed', 'temporary') as $key)
 		{
 			$data[$key] = (int) $data[$key];
 		}
+		$data['username'] = $this->text($data['username'], true);
 		$this->db->sql_query('INSERT INTO ' . $this->players_table . ' ' . $this->db->sql_build_array('INSERT', $data));
 		return (int) $this->db->sql_nextid();
 	}
@@ -201,11 +249,11 @@ class store
 	}
 
 	/**
-	* Passe en sans table les joueurs présents et non temporaires d'une table
+	* Passe dans le « sans table » les joueurs présents et non temporaires d'une table
 	*
 	* @return array les joueurs déplacés
 	*/
-	public function move_players_to_no_table($table_id)
+	public function move_players_to_no_table($table_id, $no_table_id)
 	{
 		$players = $this->fetch_all('SELECT * FROM ' . $this->players_table . '
 			WHERE table_id = ' . (int) $table_id . '
@@ -216,10 +264,20 @@ class store
 		{
 			$ids = array_map('intval', array_column($players, 'player_id'));
 			$this->db->sql_query('UPDATE ' . $this->players_table . '
-				SET table_id = 0
+				SET table_id = ' . (int) $no_table_id . '
 				WHERE ' . $this->db->sql_in_set('player_id', $ids));
 		}
 		return $players;
+	}
+
+	/**
+	* Texte prêt pour une colonne phpBB : caractères hors BMP (émojis) en entités,
+	* comme pour les messages, et 255 caractères au plus pour les colonnes VCHAR_UNI
+	*/
+	protected function text($text, $short)
+	{
+		$text = utf8_encode_ucr((string) $text);
+		return ($short && utf8_strlen($text) > 255) ? utf8_substr($text, 0, 255) : $text;
 	}
 
 	protected function fetch_one($sql)

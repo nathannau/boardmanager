@@ -24,7 +24,10 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class import_v1 extends \phpbb\console\command\command
 {
 	/** Bloc v1 dans le texte stocké (uid présent) ou dans le texte d'édition (uid optionnel) */
-	const BLOCK = '#\[boardmanager (\d{8})(?::(\w+))?\](.*?)\[/boardmanager(?::\2)?\]#s';
+	const BLOCK = '#\[boardmanager (\d{6,8})(?::(\w+))?\](.*?)\[/boardmanager(?::\2)?\]#s';
+
+	/** Exemples cités dans un [code] : ignorés */
+	const CODE = '#<CODE>.*?</CODE>#s';
 
 	/** @var \phpbb\db\driver\driver_interface */
 	protected $db;
@@ -75,6 +78,7 @@ class import_v1 extends \phpbb\console\command\command
 		$stats = array('posts' => 0, 'imported' => 0, 'updated' => 0, 'skipped' => 0, 'tables' => 0, 'players' => 0, 'rewritten' => 0);
 		$unresolved = array();
 		$warnings = array();
+		$done_topics = array();
 
 		$sql = 'SELECT post_id, topic_id, poster_id, post_time, post_text, bbcode_uid, enable_bbcode, enable_smilies, enable_magic_url
 			FROM ' . POSTS_TABLE . "
@@ -89,8 +93,9 @@ class import_v1 extends \phpbb\console\command\command
 		{
 			$stats['posts']++;
 			$post_id = (int) $post['post_id'];
+			$topic_id = (int) $post['topic_id'];
 
-			if (!preg_match_all(self::BLOCK, $post['post_text'], $blocks, PREG_SET_ORDER))
+			if (!preg_match_all(self::BLOCK, preg_replace(self::CODE, '', $post['post_text']), $blocks, PREG_SET_ORDER))
 			{
 				$warnings[] = "Message $post_id : bloc [boardmanager] illisible, ignoré.";
 				continue;
@@ -98,6 +103,13 @@ class import_v1 extends \phpbb\console\command\command
 			if (count($blocks) > 1)
 			{
 				$warnings[] = "Message $post_id : " . count($blocks) . ' blocs, seul le premier est importé.';
+			}
+
+			// Une séance par sujet : celle du premier message qui en contient une
+			if (isset($done_topics[$topic_id]))
+			{
+				$warnings[] = "Message $post_id : le sujet $topic_id a déjà une séance (message {$done_topics[$topic_id]}), ignoré.";
+				continue;
 			}
 
 			$session_date = $this->rules->parse_v1_date($blocks[0][1]);
@@ -110,7 +122,8 @@ class import_v1 extends \phpbb\console\command\command
 			$boards = new Boards($this->normalize($blocks[0][3]), $blocks[0][1]);
 			$rows = $this->build_rows($boards, $session_date, (int) $post['post_time'], $unresolved, $post_id);
 
-			$existing = $this->store->get_session_by_post($post_id);
+			$done_topics[$topic_id] = $post_id;
+			$existing = $this->store->get_session_by_topic($topic_id);
 			$import = !$existing || ($update && $existing['source'] === 'v1');
 			if ($existing && !$import)
 			{
@@ -138,7 +151,7 @@ class import_v1 extends \phpbb\console\command\command
 					}
 					else
 					{
-						$session_id = $this->store->create_session($post_id, $post['topic_id'], $session_date, $post['poster_id'], 'v1', $post['post_time']);
+						$session_id = $this->store->create_session($topic_id, $session_date, $post['poster_id'], 'v1', $post['post_time']);
 					}
 					$this->write_rows($session_id, $rows);
 					$this->store->commit();
@@ -283,12 +296,13 @@ class import_v1 extends \phpbb\console\command\command
 			$table_id = $this->store->add_table(array_merge($table['table'], array('session_id' => $session_id)));
 			foreach ($table['players'] as $player)
 			{
-				$this->store->add_player(array_merge($player, array('session_id' => $session_id, 'table_id' => $table_id)));
+				$this->store->add_player(array_merge($player, array('table_id' => $table_id)));
 			}
 		}
+		$no_table_id = $this->store->get_no_table_id($session_id);
 		foreach ($rows['no_table'] as $player)
 		{
-			$this->store->add_player(array_merge($player, array('session_id' => $session_id, 'table_id' => 0)));
+			$this->store->add_player(array_merge($player, array('table_id' => $no_table_id)));
 		}
 	}
 

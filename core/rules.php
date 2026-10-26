@@ -145,13 +145,30 @@ class rules
 	}
 
 	/**
+	* Date v1 : JJMM suivi de l'année. Comme mktime() en v1, une année
+	* sur 2 ou 3 chiffres (« 090916 », « 1305016 ») est dans les années 2000.
+	*
 	* @param string $date JJMMAAAA (format v1)
 	* @return int|false
 	*/
 	public function parse_v1_date($date)
 	{
-		$d = \DateTime::createFromFormat('!dmY', $date, new \DateTimeZone(self::TIMEZONE));
-		return ($d && $d->format('dmY') === $date) ? $d->getTimestamp() : false;
+		if (!preg_match('/^(\d{2})(\d{2})(\d{2,4})$/', $date, $match))
+		{
+			return false;
+		}
+		$year = (int) $match[3];
+		if ($year < 100)
+		{
+			$year += 2000;
+		}
+		if ($year > 2100 || !checkdate((int) $match[2], (int) $match[1], $year))
+		{
+			return false;
+		}
+		// Les colonnes TIMESTAMP de phpBB sont non signées
+		$timestamp = $this->parse_date(sprintf('%04d-%02d-%02d', $year, $match[2], $match[1]));
+		return ($timestamp !== false && $timestamp >= 0) ? $timestamp : false;
 	}
 
 	public function format_date($timestamp, $format = 'Y-m-d')
@@ -191,31 +208,41 @@ class rules
 	// État d'une séance
 
 	/**
-	* Charge une séance complète
+	* Charge une séance complète. Le « sans table » est rangé sous l'identifiant 0.
 	*
-	* @return array session, tables (table_id => table), players (table_id => joueurs)
+	* @return array session, no_table_id, tables (table_id => table, hors sans table),
+	*               players (table_id => joueurs, 0 pour le sans table)
 	*/
 	public function load($session)
 	{
-		$tables = array();
+		$state = array('session' => $session, 'no_table_id' => 0, 'tables' => array(), 'players' => array(0 => array()));
 		foreach ($this->store->get_tables($session['session_id']) as $table)
 		{
-			$tables[(int) $table['table_id']] = $table;
-		}
-		$players = array(0 => array());
-		foreach ($tables as $table_id => $table)
-		{
-			$players[$table_id] = array();
+			if ($table['no_table'])
+			{
+				$state['no_table_id'] = (int) $table['table_id'];
+				continue;
+			}
+			$state['tables'][(int) $table['table_id']] = $table;
+			$state['players'][(int) $table['table_id']] = array();
 		}
 		foreach ($this->store->get_players($session['session_id']) as $player)
 		{
-			$table_id = (int) $player['table_id'];
-			if (isset($players[$table_id]))
+			$table_id = (int) $player['table_id'] === $state['no_table_id'] ? 0 : (int) $player['table_id'];
+			if (isset($state['players'][$table_id]))
 			{
-				$players[$table_id][] = $player;
+				$state['players'][$table_id][] = $player;
 			}
 		}
-		return array('session' => $session, 'tables' => $tables, 'players' => $players);
+		return $state;
+	}
+
+	/**
+	* Identifiant réel en base (0 = le « sans table » de la séance)
+	*/
+	public function table_key(array $state, $table_id)
+	{
+		return $table_id ? (int) $table_id : $state['no_table_id'];
 	}
 
 	/**
@@ -306,7 +333,6 @@ class rules
 	*/
 	public function register_user(array $state, $table_id, $user_id, $username, $added_by, $temporary = false)
 	{
-		$session_id = (int) $state['session']['session_id'];
 		$date = time();
 		if ($table_id && !$temporary)
 		{
@@ -319,8 +345,7 @@ class rules
 			$this->store->delete_temporary($table_id, $user_id);
 		}
 		return $this->store->add_player(array(
-			'session_id'	=> $session_id,
-			'table_id'		=> (int) $table_id,
+			'table_id'		=> $this->table_key($state, $table_id),
 			'user_id'		=> (int) $user_id,
 			'username'		=> $username,
 			'added_by'		=> (int) $added_by,
@@ -335,8 +360,7 @@ class rules
 	public function add_guest_player(array $state, $table_id, $name, $added_by)
 	{
 		return $this->store->add_player(array(
-			'session_id'	=> (int) $state['session']['session_id'],
-			'table_id'		=> (int) $table_id,
+			'table_id'		=> $this->table_key($state, $table_id),
 			'user_id'		=> 0,
 			'username'		=> $name,
 			'added_by'		=> (int) $added_by,

@@ -29,7 +29,6 @@ class v2_0_0 extends \phpbb\db\migration\migration
 				$this->table_prefix . 'bm2_sessions' => array(
 					'COLUMNS' => array(
 						'session_id'		=> array('UINT', null, 'auto_increment'),
-						'post_id'			=> array('UINT', 0),
 						'topic_id'			=> array('UINT', 0),
 						'session_date'		=> array('TIMESTAMP', 0),
 						'created_by'		=> array('UINT', 0),
@@ -38,23 +37,23 @@ class v2_0_0 extends \phpbb\db\migration\migration
 					),
 					'PRIMARY_KEY' => 'session_id',
 					'KEYS' => array(
-						'post_id'	=> array('UNIQUE', 'post_id'),
-						'topic_id'	=> array('INDEX', 'topic_id'),
+						'topic_id'	=> array('UNIQUE', 'topic_id'),
 					),
 				),
 				$this->table_prefix . 'bm2_tables' => array(
 					'COLUMNS' => array(
 						'table_id'			=> array('UINT', null, 'auto_increment'),
 						'session_id'		=> array('UINT', 0),
+						'no_table'			=> array('BOOL', 0),
 						'name'				=> array('VCHAR_UNI', ''),
 						'type'				=> array('VCHAR:4', ''),
-						'url'				=> array('VCHAR_UNI', ''),
-						'start_time'		=> array('VCHAR_UNI:32', ''),
+						'url'				=> array('TEXT_UNI', ''),
+						'start_time'		=> array('VCHAR_UNI', ''),
 						'min_players'		=> array('USINT', 0),
 						'max_players'		=> array('USINT', 0),
 						'mj_user_id'		=> array('UINT', 0),
 						'mj_username'		=> array('VCHAR_UNI', ''),
-						'trigger_warning'	=> array('VCHAR_UNI', ''),
+						'trigger_warning'	=> array('TEXT_UNI', ''),
 						'description'		=> array('TEXT_UNI', ''),
 						'cancelled'			=> array('BOOL', 0),
 						'cancelled_time'	=> array('TIMESTAMP', 0),
@@ -68,7 +67,6 @@ class v2_0_0 extends \phpbb\db\migration\migration
 				$this->table_prefix . 'bm2_players' => array(
 					'COLUMNS' => array(
 						'player_id'			=> array('UINT', null, 'auto_increment'),
-						'session_id'		=> array('UINT', 0),
 						'table_id'			=> array('UINT', 0),
 						'user_id'			=> array('UINT', 0),
 						'username'			=> array('VCHAR_UNI', ''),
@@ -79,7 +77,7 @@ class v2_0_0 extends \phpbb\db\migration\migration
 					),
 					'PRIMARY_KEY' => 'player_id',
 					'KEYS' => array(
-						'session_table'	=> array('INDEX', array('session_id', 'table_id')),
+						'table_id'		=> array('INDEX', 'table_id'),
 						'user_id'		=> array('INDEX', 'user_id'),
 					),
 				),

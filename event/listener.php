@@ -50,7 +50,8 @@ class listener implements EventSubscriberInterface
 	}
 
 	/**
-	* Remplace le marqueur par la séance du message (première occurrence seulement)
+	* Remplace le marqueur par la séance du sujet, dans le premier message qui le
+	* contient (première occurrence) ; les autres marqueurs sont retirés.
 	*/
 	public function render_session($event)
 	{
@@ -62,9 +63,13 @@ class listener implements EventSubscriberInterface
 		}
 
 		$row = $event['row'];
-		$html = $this->renderer->render((int) $row['post_id'], (int) $event['poster_id']);
-		$message = substr_replace($post_row['MESSAGE'], $html, $pos, strlen(self::MARKER));
-		$post_row['MESSAGE'] = str_replace(self::MARKER, '', $message);
+		$marker_post = $this->renderer->marker_post($row['topic_id']);
+		if ($marker_post && $marker_post['post_id'] === (int) $row['post_id'])
+		{
+			$html = $this->renderer->render((int) $row['topic_id'], $marker_post['poster_id']);
+			$post_row['MESSAGE'] = substr_replace($post_row['MESSAGE'], $html, $pos, strlen(self::MARKER));
+		}
+		$post_row['MESSAGE'] = str_replace(self::MARKER, '', $post_row['MESSAGE']);
 		$event['post_row'] = $post_row;
 	}
 }

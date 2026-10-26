@@ -1,8 +1,8 @@
 nathannau_boardmanager2_configure:
-    path: /boardmanager2/configure/{post}
+    path: /boardmanager2/configure/{topic}
     defaults: { _controller: nathannau.boardmanager2.main:configure }
     requirements:
-        post: \d+
+        topic: \d+
 nathannau_boardmanager2_open:
     path: /boardmanager2/open/{session}
     defaults: { _controller: nathannau.boardmanager2.main:open }
