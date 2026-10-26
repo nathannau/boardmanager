@@ -8,7 +8,7 @@
  *
  */
 
-namespace nathannau\boardmanager\core;
+namespace nathannau\boardmanager2\core;
 
 /**
 * 
@@ -34,7 +34,7 @@ class BoardManager
 //		$this->auth = $auth;
 		$this->request = $request;
 		
-		$sql = 'SELECT * FROM ' . BBCODES_TABLE . " WHERE LOWER(bbcode_tag) = 'boardmanager'";
+		$sql = 'SELECT * FROM ' . BBCODES_TABLE . " WHERE LOWER(bbcode_tag) = 'boardmanager2'";
 		$result = $this->db->sql_query($sql);
 		$this->bbcode_id = $this->db->sql_fetchfield('bbcode_id');
 		$this->db->sql_freeresult($result);
@@ -46,14 +46,14 @@ class BoardManager
 		}
 		
 		$bbcode_tool = new \acp_bbcodes();
-                $match='[boardmanager {NUMBER}]{TEXT}[/boardmanager]';
-//		$match='[boardmanager]{TEXT}[/boardmanager]';
+                $match='[boardmanager2 {NUMBER}]{TEXT}[/boardmanager2]';
+//		$match='[boardmanager2]{TEXT}[/boardmanager2]';
 		$tmp='{TEXT}';
 		$data = $bbcode_tool->build_regexp($match, $tmp);
 //echo '<pre>';print_r([$data, $match, $tmp]);echo '</pre>';
 		$this->first_pass_match = $data['first_pass_match'];
 		$this->first_pass_replace = $data['first_pass_replace'];
-		$this->second_pass_match =  '/\\[boardmanager (\\d+)(?::$uid)?\\](.*?)\\[\\/boardmanager(?::$uid)?\\]/s';//$data['second_pass_match'];
+		$this->second_pass_match =  '/\\[boardmanager2 (\\d+)(?::$uid)?\\](.*?)\\[\\/boardmanager2(?::$uid)?\\]/s';//$data['second_pass_match'];
 		$this->second_pass_replace = '$2'; // $data['second_pass_replace'];
 	}
 
@@ -192,7 +192,7 @@ class BoardManager
 		$text = preg_replace_callback($pattern, function($match) use ($uid, &$index, $allBoards) 
 		{
 			$boards = $allBoards[$index++];
-			return '[boardmanager '.$boards->GetDateAsString().':'.$uid.']'.$boards->ToBBCode().'[/boardmanager:'.$uid.']';
+			return '[boardmanager2 '.$boards->GetDateAsString().':'.$uid.']'.$boards->ToBBCode().'[/boardmanager2:'.$uid.']';
 		}, $text);
 		return /*$postrow['post_text'] =*/ $text;
 	}
@@ -214,7 +214,7 @@ class BoardManager
 		$text = preg_replace_callback($second_pass_match, function($match) use ($uid, &$index, $allBoards) 
 		{
 			$boards = $allBoards[$index++];
-			return '[boardmanager '.$boards->GetDateAsString().':'.$uid.']'.$boards->ToBBCode().'[/boardmanager:'.$uid.']';
+			return '[boardmanager2 '.$boards->GetDateAsString().':'.$uid.']'.$boards->ToBBCode().'[/boardmanager2:'.$uid.']';
 		}, $text);
 //echo "\n------------------------\n".htmlentities($text);
 //die();
@@ -223,7 +223,7 @@ class BoardManager
 
 	public function GetBBCodeId()
 	{
-		$sql = 'SELECT * FROM ' . BBCODES_TABLE . " WHERE LOWER(bbcode_tag) = 'boardmanager'";
+		$sql = 'SELECT * FROM ' . BBCODES_TABLE . " WHERE LOWER(bbcode_tag) = 'boardmanager2'";
 		$result = $this->db->sql_query($sql);
 		$bbcode_id = $this->db->sql_fetchfield('bbcode_id');
 		$this->db->sql_freeresult($result);

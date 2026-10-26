@@ -8,13 +8,13 @@
  *
  */
 
-namespace nathannau\boardmanager\controller;
+namespace nathannau\boardmanager2\controller;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use nathannau\boardmanager\core\BoardManager;
-use nathannau\boardmanager\core\Board;
-use nathannau\boardmanager\core\Player;
+use nathannau\boardmanager2\core\BoardManager;
+use nathannau\boardmanager2\core\Board;
+use nathannau\boardmanager2\core\Player;
 use \phpbb\request\request_interface;
 
 /**
@@ -204,7 +204,7 @@ class main
 		
 		$this->template->assign_vars(array('board' => $board, 'preinscription' => $preinscription));
 		$this->template->set_filenames(array(
-			'body'	=> "@nathannau_boardmanager/open.html",
+			'body'	=> "@nathannau_boardmanager2/open.html",
 		));
 		return new Response($this->template->assign_display('body'), 200, array('Content-Type' => 'text/html'));
 	}

@@ -1,22 +1,22 @@
 services:
-    nathannau.boardmanager.boardmanager:
-        class: nathannau\boardmanager\core\BoardManager
+    nathannau.boardmanager2.boardmanager:
+        class: nathannau\boardmanager2\core\BoardManager
         arguments:
             - '@dbal.conn'
             - '@user'
             - '@request'
 
-    nathannau.boardmanager.listener:
-        class: nathannau\boardmanager\events\bbcode_listener
+    nathannau.boardmanager2.listener:
+        class: nathannau\boardmanager2\events\bbcode_listener
         arguments:
-            - '@nathannau.boardmanager.boardmanager'
+            - '@nathannau.boardmanager2.boardmanager'
         tags:
             - { name: event.listener }
 
-    nathannau.boardmanager.main:
-        class: nathannau\boardmanager\controller\main
+    nathannau.boardmanager2.main:
+        class: nathannau\boardmanager2\controller\main
         arguments:
-            - '@nathannau.boardmanager.boardmanager'
+            - '@nathannau.boardmanager2.boardmanager'
             - '@dbal.conn'
             - '@user'
             - '@request'

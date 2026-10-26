@@ -8,10 +8,10 @@
  *
  */
 
-namespace nathannau\boardmanager\events;
+namespace nathannau\boardmanager2\events;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use nathannau\boardmanager\core\BoardManager;
+use nathannau\boardmanager2\core\BoardManager;
 
 /**
 * Extends EventSubscriberInterface

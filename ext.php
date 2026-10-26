@@ -11,7 +11,7 @@
 *
 */
 
-namespace nathannau\boardmanager;
+namespace nathannau\boardmanager2;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -38,7 +38,7 @@ class ext extends \phpbb\extension\base
 		$container = $this->container;
 		$db = $container->get('dbal.conn');
 
-		$sql = 'DELETE FROM ' . BBCODES_TABLE . " WHERE LOWER(bbcode_tag) = 'boardmanager'";
+		$sql = 'DELETE FROM ' . BBCODES_TABLE . " WHERE LOWER(bbcode_tag) = 'boardmanager2'";
 		$db->sql_query($sql);
 
 		$sql = 'SELECT MAX(bbcode_id) AS max_bbcode_id FROM ' . BBCODES_TABLE;
@@ -62,7 +62,7 @@ class ext extends \phpbb\extension\base
 			// Build the BBCodes
 			$data = array(
 				'bbcode_helpline'		=> 'Board Manager',
-				'bbcode_match'			=> '[boardmanager {NUMBER}]{TEXT}[/boardmanager]',
+				'bbcode_match'			=> '[boardmanager2 {NUMBER}]{TEXT}[/boardmanager2]',
 				'bbcode_tpl'			=> '{TEXT}',
 				'display_on_posting'	=> false,
 				'bbcode_id'				=> $bbcode_id,
@@ -88,7 +88,7 @@ class ext extends \phpbb\extension\base
 		$container = $this->container;
 		$db = $container->get('dbal.conn');
 
-		$sql = 'DELETE FROM ' . BBCODES_TABLE . " WHERE LOWER(bbcode_tag) = 'boardmanager'";
+		$sql = 'DELETE FROM ' . BBCODES_TABLE . " WHERE LOWER(bbcode_tag) = 'boardmanager2'";
 		$db->sql_query($sql);
 
 		return parent::disable_step($old_state);

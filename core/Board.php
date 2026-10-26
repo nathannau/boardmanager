@@ -8,7 +8,7 @@
  *
  */
 
-namespace nathannau\boardmanager\core;
+namespace nathannau\boardmanager2\core;
 
 /**
 * 
@@ -124,7 +124,7 @@ class Board
 			
 			if (!$isBot && !$isAnomymous && !$allreadyInBoard && !$this->IsInBoard($user))
 				$ret .= ' <a href="'.
-					$helper->route('nathannau_boardmanager_register', array('post'=>$postId, 'hash'=>$hash))
+					$helper->route('nathannau_boardmanager2_register', array('post'=>$postId, 'hash'=>$hash))
 					.'">m\'inscrire en sans table</a>';
             $ret .= '<br/>';
 		}
@@ -149,7 +149,7 @@ class Board
 			
 			if ($this->NbPlayer()<$this->maxPlayer && !$isBot && !$isAnomymous && !$allreadyInBoard && $canAdd)
 				$ret .= ' <a href="'.
-					$helper->route('nathannau_boardmanager_register', array('post'=>$postId, 'hash'=>$hash))
+					$helper->route('nathannau_boardmanager2_register', array('post'=>$postId, 'hash'=>$hash))
 					.'">m\'inscrire a la table</a>';
 			$ret .= '<br/>';
 
@@ -167,7 +167,7 @@ class Board
 				'</span>';
 			if ($username == $this->mj)
 				$ret .= ' <a href="'.
-					$helper->route('nathannau_boardmanager_cancel', array('post'=>$postId, 'hash'=>$hash))
+					$helper->route('nathannau_boardmanager2_cancel', array('post'=>$postId, 'hash'=>$hash))
 					.'">annuler ma table</a>';
 			$ret .= '<br/>';
         }
@@ -179,13 +179,13 @@ class Board
 			
 			if ($player->name == $username && !$player->removed && !$player->temporary)
 				$ret .= $player->name.' <a href="'.
-					$helper->route('nathannau_boardmanager_unregister', array('post'=>$postId, 'hash'=>$hash))
+					$helper->route('nathannau_boardmanager2_unregister', array('post'=>$postId, 'hash'=>$hash))
 					.'">annuler ma présence</a>';
 			else if ($player->name == $username && $player->temporary)
 				$ret .= $player->name.' * <a href="'.
-					$helper->route('nathannau_boardmanager_unregister', array('post'=>$postId, 'hash'=>$hash))
+					$helper->route('nathannau_boardmanager2_unregister', array('post'=>$postId, 'hash'=>$hash))
 					.'">annuler ma présence</a> - <a href="'.
-					$helper->route('nathannau_boardmanager_register', array('post'=>$postId, 'hash'=>$hash))
+					$helper->route('nathannau_boardmanager2_register', array('post'=>$postId, 'hash'=>$hash))
 					.'">confirmer ma présence</a>';
 			else if ($player->removed)
 				$ret .= '<span style="text-decoration: line-through">'.$player->name.($player->temporary?' *':'').'</span>';

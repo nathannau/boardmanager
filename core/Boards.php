@@ -8,7 +8,7 @@
  *
  */
 
-namespace nathannau\boardmanager\core;
+namespace nathannau\boardmanager2\core;
 
 /**
 * 
@@ -87,7 +87,7 @@ class Boards
 		
 		if (!$isInBoard && !$isAnomymous && !$isBot)
 			$ret .= '<a href="'.
-				$helper->route('nathannau_boardmanager_open', array('post'=>$postId))
+				$helper->route('nathannau_boardmanager2_open', array('post'=>$postId))
 				.'">ouvrir une table</a><br/>';
 		
 		$dispoMin = 0;

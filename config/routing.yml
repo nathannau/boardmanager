@@ -1,23 +1,23 @@
-nathannau_boardmanager_register:
-    path: /boardmanager/register/{post}/{hash}
-    defaults: { _controller: nathannau.boardmanager.main:registerAction }
+nathannau_boardmanager2_register:
+    path: /boardmanager2/register/{post}/{hash}
+    defaults: { _controller: nathannau.boardmanager2.main:registerAction }
     requirements:
         post: \d+
         hash: '[0-9a-f]{32}'
-nathannau_boardmanager_unregister:
-    path: /boardmanager/unregister/{post}/{hash}
-    defaults: { _controller: nathannau.boardmanager.main:unregisterAction }
+nathannau_boardmanager2_unregister:
+    path: /boardmanager2/unregister/{post}/{hash}
+    defaults: { _controller: nathannau.boardmanager2.main:unregisterAction }
     requirements:
         post: \d+
         hash: '[0-9a-f]{32}'
-nathannau_boardmanager_open:
-    path: /boardmanager/open/{post}
-    defaults: { _controller: nathannau.boardmanager.main:openAction }
+nathannau_boardmanager2_open:
+    path: /boardmanager2/open/{post}
+    defaults: { _controller: nathannau.boardmanager2.main:openAction }
     requirements:
         post: \d+
-nathannau_boardmanager_cancel:
-    path: /boardmanager/cancel/{post}/{hash}
-    defaults: { _controller: nathannau.boardmanager.main:cancelAction }
+nathannau_boardmanager2_cancel:
+    path: /boardmanager2/cancel/{post}/{hash}
+    defaults: { _controller: nathannau.boardmanager2.main:cancelAction }
     requirements:
         post: \d+
         hash: '[0-9a-f]{32}'

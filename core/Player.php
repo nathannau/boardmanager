@@ -8,7 +8,7 @@
  *
  */
 
-namespace nathannau\boardmanager\core;
+namespace nathannau\boardmanager2\core;
 
 /**
 * 
