@@ -1,64 +1,62 @@
-<!-- INCLUDE overall_header.html -->
-<div style="margin:0px 15px; display:block">
-    <h2>Ouverture de table</h2>
-    <form method="post">
-        <fieldset>
-            <dl>
-                <dt><label for="name">Nom du jeu * : </label></dt>
-                <dd><input type="text" name="name" id="name" placeholder="" value="{{ board.name }}"
-                        style="width: 300px" required /></dd>
-            </dl>
-            <dl>
-                <dt><label for="url">Url du descriptif : </label></dt>
-                <dd><input type="url" name="url" id="url" placeholder="http://www.laguilde-poitiers.com/"
-                        value="{{ board.url }}" style="width: 300px" /></dd>
-            </dl>
-            <dl>
-                <dt><label for="type">Type * : </label></dt>
-                <dd><select name="type" id="type">
-                        <option value="os" {{ board.type=="os" ? "selected" : "" }}>One shot</option>
-                        <option value="co" {{ board.type=="co" ? "selected" : "" }}>Campagne ouverte</option>
-                        <option value="cf" {{ board.type=="cf" ? "selected" : "" }}>Campagne fermée</option>
-                        <option value="ts" {{ board.type=="ts" ? "selected" : "" }}>Table de secours</option>
-                    </select></dd>
-            </dl>
-            <dl>
-                <dt><label for="time">Heure de début * : </label></dt>
-                <dd><input type="text" name="time" id="time" placeholder="21h" value="{{ board.time }}"
-                        style="width: 50px" required /></dd>
-            </dl>
-            <dl>
-                <dt><label for="min">Nombre de joueurs minimum * : </label></dt>
-                <dd><input type="number" name="min" id="min" placeholder="3" min="1" max="20"
-                        value="{{ board.minPlayer }}" required /></dd>
-            </dl>
-            <dl>
-                <dt><label for="max">Nombre de joueurs maximum * : </label></dt>
-                <dd><input type="number" name="max" id="max" placeholder="5" min="1" max="20"
-                        value="{{ board.maxPlayer }}" required /></dd>
-            </dl>
-            <dl>
-                <dt><label for="trigger_warning">Trigger warning : </label></dt>
-                <dd><input type="text" name="trigger_warning" id="trigger_warning" placeholder="sex - violence - ..."
-                        value="{{ board.trigger_warning }}" style="width: 300px" /></dd>
-            </dl>
-            <dl>
-                <dt><label for="description">Courte description : </label></dt>
-                <dd><input type="text" name="description" id="description" placeholder=""
-                        value="{{ board.description }}" style="width: 300px" /></dd>
-            </dl>
-            <dl>
-                <dt><label for="preinscription">Pré-inscription : </label></dt>
-                <dd><textarea name="preinscription" id="preinscription" placeholder="Un joueur par ligne"
-                        style="width: 300px; height: 100px">{{ preinscription }}</textarea>
-            </dl>
-            <input type="submit" value="Ouvrir la table" /><br />
-            <i>* informations obligatoires</i>
-
-    </form>
-</div> <!-- INCLUDE jumpbox.html --> <!-- IF S_DISPLAY_ONLINE_LIST -->
-<div class="stat-block online-list">
-    <h3><!-- IF U_VIEWONLINE --><a
-            href="{U_VIEWONLINE}">{L_WHO_IS_ONLINE}</a><!-- ELSE -->{L_WHO_IS_ONLINE}<!-- ENDIF --></h3>
-    <p>{LOGGED_IN_USER_LIST}</p>
-</div> <!-- ENDIF --> <!-- INCLUDE overall_footer.html -->
+{% include 'overall_header.html' %}
+<h2>{{ lang('BM2_OPEN_TITLE') }}</h2>
+<form method="post" class="bm2-form">
+	<div class="panel">
+		<div class="inner">
+		{% if BM2_ERRORS %}<div class="bm2-errors">{% for error in BM2_ERRORS %}{{ error }}<br />{% endfor %}</div>{% endif %}
+		<fieldset>
+			<dl>
+				<dt><label for="name">{{ lang('BM2_FIELD_NAME') }} * :</label></dt>
+				<dd><input type="text" name="name" id="name" class="inputbox autowidth" value="{{ BM2_TABLE.name }}" required /></dd>
+			</dl>
+			<dl>
+				<dt><label for="url">{{ lang('BM2_FIELD_URL') }} :</label></dt>
+				<dd><input type="url" name="url" id="url" class="inputbox autowidth" placeholder="https://www.laguilde-poitiers.com/" value="{{ BM2_TABLE.url }}" /></dd>
+			</dl>
+			<dl>
+				<dt><label for="type">{{ lang('BM2_FIELD_TYPE') }} * :</label></dt>
+				<dd><select name="type" id="type">
+					{% for value, label in BM2_TYPES %}<option value="{{ value }}"{% if BM2_TABLE.type == value %} selected="selected"{% endif %}>{{ label }}</option>{% endfor %}
+				</select></dd>
+			</dl>
+			<dl>
+				<dt><label for="time">{{ lang('BM2_FIELD_TIME') }} * :</label></dt>
+				<dd><input type="text" name="time" id="time" class="inputbox autowidth" size="6" placeholder="21h" value="{{ BM2_TABLE.start_time }}" required /></dd>
+			</dl>
+			<dl>
+				<dt><label for="min">{{ lang('BM2_FIELD_MIN') }} * :</label></dt>
+				<dd><input type="number" name="min" id="min" class="inputbox autowidth" min="1" max="20" value="{{ BM2_TABLE.min_players }}" required /></dd>
+			</dl>
+			<dl>
+				<dt><label for="max">{{ lang('BM2_FIELD_MAX') }} * :</label></dt>
+				<dd><input type="number" name="max" id="max" class="inputbox autowidth" min="1" max="20" value="{{ BM2_TABLE.max_players }}" required /></dd>
+			</dl>
+			{% if BM2_MANAGER %}
+			<dl>
+				<dt><label for="mj">{{ lang('BM2_FIELD_MJ') }} * :</label><br /><span>{{ lang('BM2_FIELD_MJ_EXPLAIN') }}</span></dt>
+				<dd><input type="text" name="mj" id="mj" class="inputbox autowidth" value="{{ BM2_MJ }}" required /></dd>
+			</dl>
+			{% endif %}
+			<dl>
+				<dt><label for="trigger_warning">{{ lang('BM2_FIELD_TRIGGER_WARNING') }} :</label></dt>
+				<dd><input type="text" name="trigger_warning" id="trigger_warning" class="inputbox autowidth" placeholder="sexe - violence - ..." value="{{ BM2_TABLE.trigger_warning }}" /></dd>
+			</dl>
+			<dl>
+				<dt><label for="description">{{ lang('BM2_FIELD_DESCRIPTION') }} :</label></dt>
+				<dd><input type="text" name="description" id="description" class="inputbox autowidth" value="{{ BM2_TABLE.description }}" /></dd>
+			</dl>
+			<dl>
+				<dt><label for="preinscription">{{ lang('BM2_FIELD_PREREGISTRATION') }} :</label><br /><span>{{ lang('BM2_FIELD_PREREGISTRATION_EXPLAIN') }}</span></dt>
+				<dd><textarea name="preinscription" id="preinscription" class="inputbox" placeholder="Un joueur par ligne">{{ BM2_PREREGISTRATION }}</textarea></dd>
+			</dl>
+		</fieldset>
+		</div>
+	</div>
+	<fieldset class="submit-buttons">
+		<a href="{{ U_BM2_BACK }}" class="button">{{ lang('CANCEL') }}</a>
+		<input type="submit" name="submit" value="{{ lang('BM2_OPEN_SUBMIT') }}" class="button1" />
+		{{ S_FORM_TOKEN }}
+	</fieldset>
+	<p><i>{{ lang('BM2_REQUIRED') }}</i></p>
+</form>
+{% include 'overall_footer.html' %}

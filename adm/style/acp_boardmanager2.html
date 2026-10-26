@@ -1,0 +1,22 @@
+{% include 'overall_header.html' %}
+
+<h1>{{ lang('ACP_BOARDMANAGER2_SETTINGS') }}</h1>
+<p>{{ lang('ACP_BOARDMANAGER2_EXPLAIN') }}</p>
+
+<form id="acp_boardmanager2" method="post" action="{{ U_ACTION }}">
+	<fieldset>
+		<legend>{{ lang('ACP_BOARDMANAGER2_SETTINGS') }}</legend>
+		<dl>
+			<dt><label for="bm2_manager_groups">{{ lang('ACP_BOARDMANAGER2_GROUPS') }}{{ lang('COLON') }}</label><br /><span>{{ lang('ACP_BOARDMANAGER2_GROUPS_EXPLAIN') }}</span></dt>
+			<dd><select id="bm2_manager_groups" name="bm2_manager_groups[]" multiple="multiple" size="{{ BM2_GROUPS_SIZE }}">
+				{% for group in bm2_groups %}<option value="{{ group.ID }}"{% if group.SELECTED %} selected="selected"{% endif %}>{{ group.NAME }}</option>{% endfor %}
+			</select></dd>
+		</dl>
+	</fieldset>
+	<fieldset class="submit-buttons">
+		<input class="button1" type="submit" id="submit" name="submit" value="{{ lang('SUBMIT') }}" />
+		{{ S_FORM_TOKEN }}
+	</fieldset>
+</form>
+
+{% include 'overall_footer.html' %}

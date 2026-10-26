@@ -1,97 +1,28 @@
 <?php
 /**
-*
-* This file is part of the phpBB Forum Software package.
-*
-* @copyright (c) phpBB Limited <https://www.phpbb.com>
-* @license GNU General Public License, version 2 (GPL-2.0)
-*
-* For full copyright and license information, please see
-* the docs/CREDITS.txt file.
-*
-*/
+ *
+ * BoardManager extension for the phpBB Forum Software package.
+ *
+ * @copyright (c) phpBB Limited <https://www.phpbb.com>
+ * @license GNU General Public License, version 2 (GPL-2.0)
+ *
+ */
 
 namespace nathannau\boardmanager2;
 
-use Symfony\Component\DependencyInjection\ContainerInterface;
-
 /**
-* Extension class for board announcements
+* Extension class
+*
+* Le BBCode [boardmanager2][/boardmanager2] est déclaré par l'événement
+* core.text_formatter_s9e_configure_after (voir event/listener.php) :
+* aucune ligne n'est écrite dans la table des BBCodes. La purge du cache
+* faite par phpBB à l'activation regénère la configuration du parseur.
 */
 class ext extends \phpbb\extension\base
 {
-	/**
-	* Single enable step that installs any included migrations
-	*
-	* @param mixed $old_state State returned by previous call of this method
-	* @return false Indicates no further steps are required
-	*/
-	public function enable_step($old_state)
+	public function is_enableable()
 	{
-		// Load the acp_bbcode class
-		if (!class_exists('acp_bbcodes'))
-		{
-			global $phpbb_root_path, $phpEx;
-			include($phpbb_root_path . 'includes/acp/acp_bbcodes.'.$phpEx);
-		}
-		
-		$container = $this->container;
-		$db = $container->get('dbal.conn');
-
-		$sql = 'DELETE FROM ' . BBCODES_TABLE . " WHERE LOWER(bbcode_tag) = 'boardmanager2'";
-		$db->sql_query($sql);
-
-		$sql = 'SELECT MAX(bbcode_id) AS max_bbcode_id FROM ' . BBCODES_TABLE;
-		$result = $db->sql_query($sql);
-		$max_bbcode_id = $db->sql_fetchfield('max_bbcode_id');
-		$db->sql_freeresult($result);
-
-		if ($max_bbcode_id)
-		{
-			$bbcode_id = $max_bbcode_id + 1;
-			// Make sure it is greater than the core BBCode ids...
-			if ($bbcode_id <= NUM_CORE_BBCODES) $bbcode_id = NUM_CORE_BBCODES + 1;
-		}
-		else
-			$bbcode_id = NUM_CORE_BBCODES + 1;
-
-		if ($bbcode_id <= BBCODE_LIMIT)
-		{
-			$bbcode_tool = new \acp_bbcodes();
-
-			// Build the BBCodes
-			$data = array(
-				'bbcode_helpline'		=> 'Board Manager',
-				'bbcode_match'			=> '[boardmanager2 {NUMBER}]{TEXT}[/boardmanager2]',
-				'bbcode_tpl'			=> '{TEXT}',
-				'display_on_posting'	=> false,
-				'bbcode_id'				=> $bbcode_id,
-			);
-			
-			$data += $bbcode_tool->build_regexp($data['bbcode_match'], $data['bbcode_tpl']);
-			
-			$sql = 'INSERT INTO ' . BBCODES_TABLE . ' ' . $db->sql_build_array('INSERT', $data);
-			$db->sql_query($sql);
-		}
-		
-		return parent::enable_step($old_state);
+		$config = $this->container->get('config');
+		return phpbb_version_compare($config['version'], '3.3.0', '>=');
 	}
-
-	/**
-	* Single disable step that does nothing
-	*
-	* @param mixed $old_state State returned by previous call of this method
-	* @return false Indicates no further steps are required
-	*/
-	public function disable_step($old_state)
-	{
-		$container = $this->container;
-		$db = $container->get('dbal.conn');
-
-		$sql = 'DELETE FROM ' . BBCODES_TABLE . " WHERE LOWER(bbcode_tag) = 'boardmanager2'";
-		$db->sql_query($sql);
-
-		return parent::disable_step($old_state);
-	}
-
 }

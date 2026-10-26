@@ -1,0 +1,52 @@
+<div class="bm2">
+{% if BM2.CONFIGURED %}
+	<div class="bm2-header">
+		<strong>{{ lang('BM2_SESSION_OF', BM2.DATE) }}</strong>
+		{% if BM2.U_CONFIGURE %} <a href="{{ BM2.U_CONFIGURE }}">{{ lang('BM2_CHANGE_DATE') }}</a>{% endif %}
+	</div>
+
+	{% for table in BM2.TABLES %}
+	<div class="bm2-table">
+		<div class="bm2-table-title">
+			<span class="bm2-table-name">{% if table.URL %}<a href="{{ table.URL }}">{{ table.NAME }}</a>{% else %}{{ table.NAME }}{% endif %}</span>
+			{% if table.TYPE %}<span class="bm2-type">({{ table.TYPE }})</span>{% endif %}
+			{{ table.PLAYERS_RANGE }} {{ table.START_TIME }}
+			{% if table.U_REGISTER %} <a href="{{ table.U_REGISTER }}" class="bm2-action">{{ lang('BM2_REGISTER_TABLE') }}</a>{% endif %}
+		</div>
+		{% if table.DESCRIPTION %}<div class="bm2-description">{{ table.DESCRIPTION }}</div>{% endif %}
+		{% if table.TRIGGER_WARNING %}
+		<div class="bm2-tw" title="{{ lang('BM2_TRIGGER_WARNING') }}">
+			<svg height="24" viewBox="0 -960 960 960" width="24" aria-hidden="true"><path d="m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm302-40q17 0 28.5-11.5T520-280q0-17-11.5-28.5T480-320q-17 0-28.5 11.5T440-280q0 17 11.5 28.5T480-240Zm-40-120h80v-200h-80v200Zm40-100Z"/></svg>
+			{{ table.TRIGGER_WARNING }}
+		</div>
+		{% endif %}
+		<div class="bm2-mj">
+			{{ table.MJ }}{% if table.MJ_GUEST %} <span class="bm2-guest">{{ lang('BM2_GUEST') }}</span>{% endif %}
+			{% if table.U_CANCEL %} <a href="{{ table.U_CANCEL }}" class="bm2-action">{{ table.L_CANCEL }}</a>{% endif %}
+		</div>
+		{% for player in table.PLAYERS %}{% include '@nathannau_boardmanager2/session_player.html' %}{% endfor %}
+		{% if table.U_ADDPLAYER %}<div class="bm2-addplayer"><a href="{{ table.U_ADDPLAYER }}" class="bm2-action">{{ lang('BM2_ADD_PLAYER') }}</a></div>{% endif %}
+	</div>
+	{% endfor %}
+
+	<div class="bm2-table bm2-no-table">
+		<div class="bm2-table-title">
+			<span class="bm2-table-name">{{ lang('BM2_NO_TABLE') }}</span> {{ BM2.NO_TABLE.COUNT }}
+			{% if BM2.NO_TABLE.U_REGISTER %} <a href="{{ BM2.NO_TABLE.U_REGISTER }}" class="bm2-action">{{ lang('BM2_REGISTER_NO_TABLE') }}</a>{% endif %}
+		</div>
+		{% for player in BM2.NO_TABLE.PLAYERS %}{% include '@nathannau_boardmanager2/session_player.html' %}{% endfor %}
+	</div>
+
+	{% if BM2.U_OPEN %}<div class="bm2-open"><a href="{{ BM2.U_OPEN }}" class="bm2-action">{{ lang('BM2_OPEN_TABLE') }}</a></div>{% endif %}
+
+	<div class="bm2-remaining">
+		{{ BM2.REMAINING_MIN }}<br />
+		{{ BM2.REMAINING_MAX }}
+	</div>
+{% else %}
+	<div class="bm2-header">
+		<strong>{{ lang('BM2_NOT_CONFIGURED') }}</strong>
+		{% if BM2.U_CONFIGURE %} <a href="{{ BM2.U_CONFIGURE }}">{{ lang('BM2_CONFIGURE') }}</a>{% endif %}
+	</div>
+{% endif %}
+</div>

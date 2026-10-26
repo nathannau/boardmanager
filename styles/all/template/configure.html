@@ -1,0 +1,21 @@
+{% include 'overall_header.html' %}
+<h2>{{ lang('BM2_CONFIGURE_TITLE') }}</h2>
+<form method="post" class="bm2-form">
+	<div class="panel">
+		<div class="inner">
+		{% if BM2_ERRORS %}<div class="bm2-errors">{% for error in BM2_ERRORS %}{{ error }}<br />{% endfor %}</div>{% endif %}
+		<fieldset>
+			<dl>
+				<dt><label for="session_date">{{ lang('BM2_SESSION_DATE') }} :</label></dt>
+				<dd><input type="date" name="session_date" id="session_date" class="inputbox autowidth" value="{{ BM2_SESSION_DATE }}" required /></dd>
+			</dl>
+		</fieldset>
+		</div>
+	</div>
+	<fieldset class="submit-buttons">
+		<a href="{{ U_BM2_BACK }}" class="button">{{ lang('CANCEL') }}</a>
+		<input type="submit" name="submit" value="{{ lang('BM2_SAVE') }}" class="button1" />
+		{{ S_FORM_TOKEN }}
+	</fieldset>
+</form>
+{% include 'overall_footer.html' %}

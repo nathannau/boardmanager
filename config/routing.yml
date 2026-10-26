@@ -1,23 +1,37 @@
-nathannau_boardmanager2_register:
-    path: /boardmanager2/register/{post}/{hash}
-    defaults: { _controller: nathannau.boardmanager2.main:registerAction }
+nathannau_boardmanager2_configure:
+    path: /boardmanager2/configure/{post}
+    defaults: { _controller: nathannau.boardmanager2.main:configure }
     requirements:
         post: \d+
-        hash: '[0-9a-f]{32}'
-nathannau_boardmanager2_unregister:
-    path: /boardmanager2/unregister/{post}/{hash}
-    defaults: { _controller: nathannau.boardmanager2.main:unregisterAction }
-    requirements:
-        post: \d+
-        hash: '[0-9a-f]{32}'
 nathannau_boardmanager2_open:
-    path: /boardmanager2/open/{post}
-    defaults: { _controller: nathannau.boardmanager2.main:openAction }
+    path: /boardmanager2/open/{session}
+    defaults: { _controller: nathannau.boardmanager2.main:open }
     requirements:
-        post: \d+
+        session: \d+
+nathannau_boardmanager2_register:
+    path: /boardmanager2/register/{session}/{table}
+    defaults: { _controller: nathannau.boardmanager2.main:register }
+    requirements:
+        session: \d+
+        table: \d+
+nathannau_boardmanager2_unregister:
+    path: /boardmanager2/unregister/{session}/{table}
+    defaults: { _controller: nathannau.boardmanager2.main:unregister }
+    requirements:
+        session: \d+
+        table: \d+
 nathannau_boardmanager2_cancel:
-    path: /boardmanager2/cancel/{post}/{hash}
-    defaults: { _controller: nathannau.boardmanager2.main:cancelAction }
+    path: /boardmanager2/cancel/{table}
+    defaults: { _controller: nathannau.boardmanager2.main:cancel }
     requirements:
-        post: \d+
-        hash: '[0-9a-f]{32}'
+        table: \d+
+nathannau_boardmanager2_addplayer:
+    path: /boardmanager2/addplayer/{table}
+    defaults: { _controller: nathannau.boardmanager2.main:addplayer }
+    requirements:
+        table: \d+
+nathannau_boardmanager2_removeplayer:
+    path: /boardmanager2/removeplayer/{player}
+    defaults: { _controller: nathannau.boardmanager2.main:removeplayer }
+    requirements:
+        player: \d+

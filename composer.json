@@ -3,7 +3,7 @@
 	"type": "phpbb-extension",
 	"description": "Une extension pour phpBB pour automatiser la gestion de la mise en place des tables.",
 	"homepage": "https://www.phpbb.com",
-	"version": "2.0-dev",
+	"version": "2.0.0",
 	"keywords": ["phpbb", "extension", "la guilde", "mise en place des tables"],
 	"license": "GPL-2.0",
 	"authors": [
@@ -14,7 +14,7 @@
 		}
 	],
 	"require": {
-		"php": ">=5.3.3"
+		"php": ">=7.1"
 	},
 	"extra": {
 		"display-name": "Board Manager Extension v2",

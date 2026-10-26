@@ -1,25 +1,66 @@
+parameters:
+    nathannau.boardmanager2.tables.sessions: '%core.table_prefix%bm2_sessions'
+    nathannau.boardmanager2.tables.tables: '%core.table_prefix%bm2_tables'
+    nathannau.boardmanager2.tables.players: '%core.table_prefix%bm2_players'
+
 services:
-    nathannau.boardmanager2.boardmanager:
-        class: nathannau\boardmanager2\core\BoardManager
+    nathannau.boardmanager2.store:
+        class: nathannau\boardmanager2\core\store
         arguments:
             - '@dbal.conn'
+            - '%nathannau.boardmanager2.tables.sessions%'
+            - '%nathannau.boardmanager2.tables.tables%'
+            - '%nathannau.boardmanager2.tables.players%'
+
+    nathannau.boardmanager2.rules:
+        class: nathannau\boardmanager2\core\rules
+        arguments:
+            - '@nathannau.boardmanager2.store'
+            - '@config_text'
+            - '@dbal.conn'
+
+    nathannau.boardmanager2.renderer:
+        class: nathannau\boardmanager2\core\renderer
+        arguments:
+            - '@nathannau.boardmanager2.store'
+            - '@nathannau.boardmanager2.rules'
+            - '@controller.helper'
+            - '@template'
             - '@user'
-            - '@request'
+            - '@language'
+            - '@dbal.conn'
 
     nathannau.boardmanager2.listener:
-        class: nathannau\boardmanager2\events\bbcode_listener
+        class: nathannau\boardmanager2\event\listener
         arguments:
-            - '@nathannau.boardmanager2.boardmanager'
+            - '@nathannau.boardmanager2.renderer'
         tags:
             - { name: event.listener }
 
     nathannau.boardmanager2.main:
         class: nathannau\boardmanager2\controller\main
         arguments:
-            - '@nathannau.boardmanager2.boardmanager'
+            - '@nathannau.boardmanager2.store'
+            - '@nathannau.boardmanager2.rules'
+            - '@nathannau.boardmanager2.renderer'
             - '@dbal.conn'
             - '@user'
+            - '@auth'
             - '@request'
             - '@template'
-            #- '@form.factory'
-            
+            - '@controller.helper'
+            - '@language'
+            - '%core.root_path%'
+            - '%core.php_ext%'
+
+    nathannau.boardmanager2.console.import_v1:
+        class: nathannau\boardmanager2\console\import_v1
+        arguments:
+            - '@user'
+            - '@dbal.conn'
+            - '@nathannau.boardmanager2.store'
+            - '@nathannau.boardmanager2.rules'
+            - '%core.root_path%'
+            - '%core.php_ext%'
+        tags:
+            - { name: console.command }
