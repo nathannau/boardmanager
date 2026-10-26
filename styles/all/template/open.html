@@ -1,5 +1,5 @@
 {% include 'overall_header.html' %}
-<h2>{{ lang('BM2_OPEN_TITLE') }}</h2>
+<h2>{{ lang(BM2_EDIT ? 'BM2_EDIT_TITLE' : 'BM2_OPEN_TITLE') }}</h2>
 <form method="post" class="bm2-form">
 	<div class="panel">
 		<div class="inner">
@@ -45,16 +45,18 @@
 				<dt><label for="description">{{ lang('BM2_FIELD_DESCRIPTION') }} :</label></dt>
 				<dd><input type="text" name="description" id="description" class="inputbox autowidth" value="{{ BM2_TABLE.description }}" /></dd>
 			</dl>
+			{% if not BM2_EDIT %}
 			<dl>
 				<dt><label for="preinscription">{{ lang('BM2_FIELD_PREREGISTRATION') }} :</label><br /><span>{{ lang('BM2_FIELD_PREREGISTRATION_EXPLAIN') }}</span></dt>
 				<dd><textarea name="preinscription" id="preinscription" class="inputbox" placeholder="Un joueur par ligne">{{ BM2_PREREGISTRATION }}</textarea></dd>
 			</dl>
+			{% endif %}
 		</fieldset>
 		</div>
 	</div>
 	<fieldset class="submit-buttons">
 		<a href="{{ U_BM2_BACK }}" class="button">{{ lang('CANCEL') }}</a>
-		<input type="submit" name="submit" value="{{ lang('BM2_OPEN_SUBMIT') }}" class="button1" />
+		<input type="submit" name="submit" value="{{ lang(BM2_EDIT ? 'BM2_EDIT_SUBMIT' : 'BM2_OPEN_SUBMIT') }}" class="button1" />
 		{{ S_FORM_TOKEN }}
 	</fieldset>
 	<p><i>{{ lang('BM2_REQUIRED') }}</i></p>

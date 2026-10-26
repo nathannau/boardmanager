@@ -148,6 +148,30 @@ class store
 		return (int) $this->db->sql_nextid();
 	}
 
+	/**
+	* @param array $data colonnes de bm2_tables à modifier
+	*/
+	public function update_table($table_id, array $data)
+	{
+		foreach (array('min_players', 'max_players', 'mj_user_id') as $key)
+		{
+			if (isset($data[$key]))
+			{
+				$data[$key] = (int) $data[$key];
+			}
+		}
+		foreach (array('name', 'type', 'url', 'start_time', 'mj_username', 'trigger_warning', 'description') as $key)
+		{
+			if (isset($data[$key]))
+			{
+				$data[$key] = $this->text($data[$key], !in_array($key, array('url', 'trigger_warning', 'description')));
+			}
+		}
+		$this->db->sql_query('UPDATE ' . $this->tables_table . ' SET ' . $this->db->sql_build_array('UPDATE', $data) . '
+			WHERE table_id = ' . (int) $table_id . '
+				AND no_table = 0');
+	}
+
 	protected function add_no_table($session_id)
 	{
 		return $this->add_table(array(
@@ -233,6 +257,16 @@ class store
 	{
 		$this->db->sql_query('UPDATE ' . $this->players_table . '
 			SET removed = 1
+			WHERE player_id = ' . (int) $player_id);
+	}
+
+	/**
+	* Valide une pré-inscription sur place (joueur hors forum)
+	*/
+	public function confirm_player($player_id)
+	{
+		$this->db->sql_query('UPDATE ' . $this->players_table . '
+			SET temporary = 0
 			WHERE player_id = ' . (int) $player_id);
 	}
 

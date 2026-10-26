@@ -168,9 +168,10 @@ class renderer
 				'U_REGISTER'		=> ($logged && !$engaged && !$full && $can_add)
 					? $this->action_link('nathannau_boardmanager2_register', array('session' => $session_id, 'table' => $table_id))
 					: '',
+				'U_EDIT'			=> $can_manage ? $this->helper->route('nathannau_boardmanager2_edit', array('table' => $table_id)) : '',
 				'U_CANCEL'			=> $can_manage ? $this->action_link('nathannau_boardmanager2_cancel', array('table' => $table_id)) : '',
 				'L_CANCEL'			=> $this->language->lang($is_mj ? 'BM2_CANCEL_MY_TABLE' : 'BM2_CANCEL_TABLE'),
-				'U_ADDPLAYER'		=> $can_manage ? $this->helper->route('nathannau_boardmanager2_addplayer', array('table' => $table_id)) : '',
+				'U_ADDPLAYER'		=> ($can_manage && ($manager || !$full)) ? $this->helper->route('nathannau_boardmanager2_addplayer', array('table' => $table_id)) : '',
 				'PLAYERS'			=> $this->players_data($state, $table_id, $players, $users, $user_id, $can_manage, $manager),
 			);
 		}
@@ -206,6 +207,9 @@ class renderer
 				'LATE'			=> $this->rules->is_late($player, $state['session']),
 				'U_UNREGISTER'	=> ($own && $active) ? $this->action_link('nathannau_boardmanager2_unregister', $link) : '',
 				'U_CONFIRM'		=> ($own && $active && $player['temporary']) ? $this->action_link('nathannau_boardmanager2_register', $link) : '',
+				'U_VALIDATE'	=> (!$own && $active && $player['temporary'] && $manager)
+					? $this->action_link('nathannau_boardmanager2_validate', array('player' => (int) $player['player_id']))
+					: '',
 				'U_REMOVE'		=> (!$own && $active && ($manager || ($can_manage && $guest)))
 					? $this->action_link('nathannau_boardmanager2_removeplayer', array('player' => (int) $player['player_id']))
 					: '',
@@ -238,7 +242,7 @@ class renderer
 		}
 
 		$users = array();
-		$result = $this->db->sql_query('SELECT user_id, username, user_colour FROM ' . USERS_TABLE . ' WHERE ' . $this->db->sql_in_set('user_id', $ids));
+		$result = $this->db->sql_query('SELECT user_id, username FROM ' . USERS_TABLE . ' WHERE ' . $this->db->sql_in_set('user_id', $ids));
 		while ($row = $this->db->sql_fetchrow($result))
 		{
 			$users[(int) $row['user_id']] = $row;
@@ -247,12 +251,15 @@ class renderer
 		return $users;
 	}
 
+	/**
+	* Pseudo avec lien de profil, sans la couleur du groupe (ce n'est pas un rôle dans la séance)
+	*/
 	protected function username_html($user_id, $username, array $users)
 	{
 		$user_id = (int) $user_id;
 		if ($user_id && isset($users[$user_id]))
 		{
-			return get_username_string('full', $user_id, $users[$user_id]['username'], $users[$user_id]['user_colour']);
+			return get_username_string('full', $user_id, $users[$user_id]['username']);
 		}
 		return $username;
 	}

@@ -144,6 +144,12 @@ class main
 		list($session, $topic) = $this->load_session($session);
 		$manager = $this->is_manager();
 
+		// Déjà joueur ou MJ d'une table : pas de nouvelle table (un gestionnaire peut en ouvrir une pour un autre MJ)
+		if (!$manager && $this->rules->is_engaged($this->rules->load($session), $this->user_id()))
+		{
+			$this->error('BM2_ERROR_ENGAGED');
+		}
+
 		$data = array(
 			'session_id'		=> (int) $session['session_id'],
 			'name'				=> $this->request->variable('name', '', true),
@@ -167,16 +173,7 @@ class main
 				$errors[] = $this->language->lang('FORM_INVALID');
 			}
 
-			// MJ : l'utilisateur, ou pour un gestionnaire le pseudo saisi (compte du forum ou non)
-			$mj = array('user_id' => $this->user_id(), 'username' => $this->user->data['username']);
-			if ($manager && utf8_clean_string($mj_name) !== utf8_clean_string($this->user->data['username']))
-			{
-				$mj = $this->rules->find_user_by_name($mj_name) ?: array('user_id' => 0, 'username' => trim($mj_name));
-				if ($mj['username'] === '')
-				{
-					$errors[] = $this->language->lang('BM2_ERROR_NOT_ALLOWED');
-				}
-			}
+			$mj = $this->resolve_mj($mj_name, array('user_id' => $this->user_id(), 'username' => $this->user->data['username']), $errors);
 
 			if (!$errors)
 			{
@@ -227,9 +224,94 @@ class main
 			'BM2_MANAGER'		=> $manager,
 			'BM2_MJ'			=> $mj_name,
 			'BM2_PREREGISTRATION'	=> $preregistration,
+			'BM2_EDIT'			=> false,
 			'U_BM2_BACK'		=> $this->back_url,
 		));
 		return $this->helper->render('@nathannau_boardmanager2/open.html', $this->language->lang('BM2_OPEN_TITLE'));
+	}
+
+	/**
+	* Modification d'une table par son MJ ou un gestionnaire (qui peut aussi changer de MJ)
+	*/
+	public function edit($table)
+	{
+		$this->init();
+		list($table, $session, $topic) = $this->load_table($table);
+		$this->check_table_rights($table);
+		$manager = $this->is_manager();
+
+		$data = array(
+			'name'				=> $this->request->variable('name', $table['name'], true),
+			'type'				=> $this->request->variable('type', $table['type']),
+			'url'				=> $this->request->variable('url', $table['url'], true),
+			'start_time'		=> $this->request->variable('time', $table['start_time'], true),
+			'min_players'		=> $this->request->variable('min', (int) $table['min_players']),
+			'max_players'		=> $this->request->variable('max', (int) $table['max_players']),
+			'trigger_warning'	=> $this->request->variable('trigger_warning', $table['trigger_warning'], true),
+			'description'		=> $this->request->variable('description', $table['description'], true),
+		);
+		$mj_name = $manager ? $this->request->variable('mj', $table['mj_username'], true) : $table['mj_username'];
+		$errors = array();
+
+		if ($this->request->is_set_post('submit'))
+		{
+			$errors = array_map(array($this->language, 'lang'), $this->rules->validate_table($data));
+			if (!check_form_key('bm2_edit'))
+			{
+				$errors[] = $this->language->lang('FORM_INVALID');
+			}
+			$mj = $this->resolve_mj($mj_name, array('user_id' => (int) $table['mj_user_id'], 'username' => $table['mj_username']), $errors);
+
+			if (!$errors)
+			{
+				$this->begin();
+				$state = $this->rules->load($session);
+				$table_id = (int) $table['table_id'];
+				if (!isset($state['tables'][$table_id]))
+				{
+					$this->error('BM2_ERROR_NOT_FOUND');
+				}
+				$count = $this->rules->count_players($state['players'][$table_id]);
+				if ($data['max_players'] < $count)
+				{
+					$this->error('BM2_ERROR_MAX_BELOW_PLAYERS', $count);
+				}
+
+				// Nouveau MJ : il ne doit pas être engagé ailleurs, et quitte le sans table
+				if ($mj['user_id'] !== (int) $table['mj_user_id'] || $mj['username'] !== $table['mj_username'])
+				{
+					if ($mj['user_id'] && $this->rules->is_engaged($state, $mj['user_id']))
+					{
+						$this->error('BM2_ERROR_USER_ENGAGED', $mj['username']);
+					}
+					$no_table = $this->rules->find_user($state['players'][0], $mj['user_id']);
+					if ($no_table)
+					{
+						$this->store->remove_player($no_table['player_id']);
+					}
+					$data['mj_user_id'] = $mj['user_id'];
+					$data['mj_username'] = $mj['username'];
+				}
+
+				$this->store->update_table($table_id, $data);
+				$this->commit();
+
+				$message = $this->language->lang('BM2_AUTO_EDIT', $data['name'], $mj['username'], $data['start_time'], $data['min_players'], $data['max_players']);
+				redirect($this->reply($topic['topic_id'], $message));
+			}
+		}
+
+		add_form_key('bm2_edit');
+		$this->template->assign_vars(array(
+			'BM2_ERRORS'		=> $errors,
+			'BM2_TABLE'			=> $data,
+			'BM2_TYPES'			=> $this->type_options(),
+			'BM2_MANAGER'		=> $manager,
+			'BM2_MJ'			=> $mj_name,
+			'BM2_EDIT'			=> true,
+			'U_BM2_BACK'		=> $this->back_url,
+		));
+		return $this->helper->render('@nathannau_boardmanager2/open.html', $this->language->lang('BM2_EDIT_TITLE'));
 	}
 
 	/**
@@ -272,14 +354,7 @@ class main
 			}
 
 			// Une pré-inscription ne compte pas comme engagement pour la confirmer
-			$check = $state;
-			if ($confirm)
-			{
-				$check['players'][$table_id] = array_filter($check['players'][$table_id], function ($player) use ($own) {
-					return $player['player_id'] != $own['player_id'];
-				});
-			}
-			if ($this->rules->is_engaged($check, $user_id))
+			if ($confirm ? $this->rules->is_engaged_except($state, $user_id, $own['player_id']) : $this->rules->is_engaged($state, $user_id))
 			{
 				$this->error('BM2_ERROR_ENGAGED');
 			}
@@ -367,6 +442,7 @@ class main
 		$this->check_table_rights($table);
 		$manager = $this->is_manager();
 		$name = trim($this->request->variable('player', '', true));
+		$temporary = (bool) $this->request->variable('temporary', 0);
 		$errors = array();
 
 		if ($this->request->is_set_post('submit'))
@@ -397,21 +473,21 @@ class main
 
 				if ($account)
 				{
-					// Gestionnaire : inscription directe ; MJ : pré-inscription « * » à confirmer
 					if ($this->rules->is_engaged($state, $account['user_id']))
 					{
 						$this->error('BM2_ERROR_USER_ENGAGED', $account['username']);
 					}
-					$this->rules->register_user($state, $table_id, $account['user_id'], $account['username'], $this->user_id(), !$manager);
+					$this->rules->register_user($state, $table_id, $account['user_id'], $account['username'], $this->user_id(), $temporary);
 					$name = $account['username'];
 				}
 				else
 				{
-					$this->rules->add_guest_player($state, $table_id, $name, $this->user_id());
+					$this->rules->add_guest_player($state, $table_id, $name, $this->user_id(), $temporary);
 				}
 				$this->commit();
 
-				redirect($this->reply($topic['topic_id'], $this->language->lang('BM2_AUTO_ADD_PLAYER', $name, $table['name'], $this->mj_name($table))));
+				$key = $temporary ? 'BM2_AUTO_PREREGISTER_PLAYER' : 'BM2_AUTO_ADD_PLAYER';
+				redirect($this->reply($topic['topic_id'], $this->language->lang($key, $name, $table['name'], $this->mj_name($table))));
 			}
 		}
 
@@ -420,9 +496,53 @@ class main
 			'BM2_ERRORS'		=> $errors,
 			'BM2_TABLE_NAME'	=> $table['name'],
 			'BM2_PLAYER'		=> $name,
+			'BM2_TEMPORARY'		=> $temporary,
 			'U_BM2_BACK'		=> $this->back_url,
 		));
 		return $this->helper->render('@nathannau_boardmanager2/addplayer.html', $this->language->lang('BM2_ADDPLAYER_TITLE', $table['name']));
+	}
+
+	/**
+	* Validation d'une pré-inscription « * » par un gestionnaire
+	*/
+	public function validate($player)
+	{
+		$this->init();
+		$this->check_link('nathannau_boardmanager2_validate', array('player' => $player));
+		$player = $this->store->get_player($player);
+		if (!$player)
+		{
+			$this->error('BM2_ERROR_NOT_FOUND');
+		}
+		list($table, $session, $topic) = $this->load_table($player['table_id']);
+		if (!$this->is_manager())
+		{
+			$this->error('BM2_ERROR_NOT_ALLOWED');
+		}
+
+		$this->begin();
+		$state = $this->rules->load($session);
+		$player = $this->store->get_player($player['player_id']);
+		if (!$player['temporary'] || $player['removed'])
+		{
+			$this->error('BM2_ERROR_NOT_TEMPORARY');
+		}
+		if ($player['user_id'])
+		{
+			// Comme une confirmation par le joueur lui-même
+			if ($this->rules->is_engaged_except($state, $player['user_id'], $player['player_id']))
+			{
+				$this->error('BM2_ERROR_USER_ENGAGED', $player['username']);
+			}
+			$this->rules->register_user($state, $table['table_id'], $player['user_id'], $player['username'], $this->user_id());
+		}
+		else
+		{
+			$this->store->confirm_player($player['player_id']);
+		}
+		$this->commit();
+
+		redirect($this->reply($topic['topic_id'], $this->language->lang('BM2_AUTO_VALIDATE_PLAYER', $player['username'], $table['name'], $this->mj_name($table))));
 	}
 
 	/**
@@ -558,6 +678,26 @@ class main
 		}
 		list($session, $topic) = $this->load_session($table['session_id']);
 		return array($table, $session, $topic);
+	}
+
+	/**
+	* MJ d'une table : $default, ou pour un gestionnaire le pseudo saisi (compte du forum ou non)
+	*
+	* @return array user_id, username
+	*/
+	protected function resolve_mj($mj_name, array $default, array &$errors)
+	{
+		if (!$this->is_manager() || utf8_clean_string($mj_name) === utf8_clean_string($default['username']))
+		{
+			return $default;
+		}
+		$mj_name = trim($mj_name);
+		if ($mj_name === '')
+		{
+			$errors[] = $this->language->lang('BM2_ERROR_MJ_NAME');
+			return $default;
+		}
+		return $this->rules->find_user_by_name($mj_name) ?: array('user_id' => 0, 'username' => $mj_name);
 	}
 
 	protected function mj_name(array $table)

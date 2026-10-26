@@ -357,14 +357,29 @@ class rules
 	/**
 	* Joueur sans compte sur le forum, ajouté par le MJ ou un gestionnaire
 	*/
-	public function add_guest_player(array $state, $table_id, $name, $added_by)
+	public function add_guest_player(array $state, $table_id, $name, $added_by, $temporary = false)
 	{
 		return $this->store->add_player(array(
 			'table_id'		=> $this->table_key($state, $table_id),
 			'user_id'		=> 0,
 			'username'		=> $name,
 			'added_by'		=> (int) $added_by,
+			'temporary'		=> $temporary ? 1 : 0,
 		));
+	}
+
+	/**
+	* L'utilisateur est-il engagé ailleurs que par sa ligne $player_id ?
+	*/
+	public function is_engaged_except(array $state, $user_id, $player_id)
+	{
+		foreach ($state['players'] as $table_id => $players)
+		{
+			$state['players'][$table_id] = array_filter($players, function ($player) use ($player_id) {
+				return (int) $player['player_id'] !== (int) $player_id;
+			});
+		}
+		return $this->is_engaged($state, $user_id);
 	}
 
 	/**

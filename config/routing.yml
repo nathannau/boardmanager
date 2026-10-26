@@ -8,6 +8,11 @@ nathannau_boardmanager2_open:
     defaults: { _controller: nathannau.boardmanager2.main:open }
     requirements:
         session: \d+
+nathannau_boardmanager2_edit:
+    path: /boardmanager2/edit/{table}
+    defaults: { _controller: nathannau.boardmanager2.main:edit }
+    requirements:
+        table: \d+
 nathannau_boardmanager2_register:
     path: /boardmanager2/register/{session}/{table}
     defaults: { _controller: nathannau.boardmanager2.main:register }
@@ -30,6 +35,11 @@ nathannau_boardmanager2_addplayer:
     defaults: { _controller: nathannau.boardmanager2.main:addplayer }
     requirements:
         table: \d+
+nathannau_boardmanager2_validate:
+    path: /boardmanager2/validate/{player}
+    defaults: { _controller: nathannau.boardmanager2.main:validate }
+    requirements:
+        player: \d+
 nathannau_boardmanager2_removeplayer:
     path: /boardmanager2/removeplayer/{player}
     defaults: { _controller: nathannau.boardmanager2.main:removeplayer }

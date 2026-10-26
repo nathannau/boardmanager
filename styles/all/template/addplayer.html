@@ -9,6 +9,10 @@
 				<dt><label for="player">{{ lang('BM2_FIELD_PLAYER') }} :</label><br /><span>{{ lang('BM2_FIELD_PLAYER_EXPLAIN') }}</span></dt>
 				<dd><input type="text" name="player" id="player" class="inputbox autowidth" value="{{ BM2_PLAYER }}" required /></dd>
 			</dl>
+			<dl>
+				<dt><label for="temporary">{{ lang('BM2_FIELD_TEMPORARY') }} :</label><br /><span>{{ lang('BM2_FIELD_TEMPORARY_EXPLAIN') }}</span></dt>
+				<dd><input type="checkbox" name="temporary" id="temporary" class="bm2-checkbox" value="1"{% if BM2_TEMPORARY %} checked="checked"{% endif %} /></dd>
+			</dl>
 		</fieldset>
 		</div>
 	</div>
