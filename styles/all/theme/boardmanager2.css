@@ -5,13 +5,36 @@
 .bm2-table-title { font-weight: bold; }
 .bm2-table-name { text-decoration: underline; }
 .bm2-type { font-weight: normal; }
-.bm2-action { font-weight: normal; }
+/* Actions : petits boutons, distincts des pseudos */
+.bm2 a.bm2-action {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	margin: 1px 0 1px 6px;
+	padding: 0 8px 0 4px;
+	border: 1px solid #b4c4d4;
+	border-radius: 10px;
+	background-color: #f5f8fa;
+	color: #105289;
+	font-size: 0.85em;
+	font-weight: normal;
+	line-height: 1.6;
+	text-decoration: none;
+	vertical-align: middle;
+	white-space: nowrap;
+}
+.bm2 a.bm2-action:hover { background-color: #105289; border-color: #105289; color: #fff; }
+.bm2 a.bm2-action-danger { border-color: #dcb4b4; color: #a00; }
+.bm2 a.bm2-action-danger:hover { background-color: #a00; border-color: #a00; color: #fff; }
+.bm2 a.bm2-action .icon { font-size: 0.9em; }
+.bm2-header a.bm2-action { margin-left: 8px; }
+.bm2-addplayer a.bm2-action, .bm2-open a.bm2-action { margin-left: 0; margin-top: 4px; }
 .bm2-description { font-style: italic; }
 .bm2-tw { color: #800; font-weight: bold; display: flex; align-items: center; gap: 4px; }
 .bm2-tw svg { fill: currentColor; flex: none; }
 .bm2-mj { font-weight: bold; }
 /* prosilver affiche les liens en inline-block : le style du parent ne s'y propage pas */
-.bm2-late, .bm2-late a { color: #880000; }
+.bm2-late, .bm2-late a:not(.bm2-action) { color: #880000; }
 .bm2-removed, .bm2-removed a { text-decoration: line-through; }
 .bm2-open, .bm2-remaining { margin-top: 0.5em; }
 .bm2-form dl dd input[type="text"], .bm2-form dl dd input[type="url"], .bm2-form dl dd textarea { width: 300px; max-width: 100%; }

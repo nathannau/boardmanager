@@ -1,7 +1,7 @@
 <div class="bm2-player{% if player.LATE %} bm2-late{% endif %}">
 	{% if player.REMOVED %}<span class="bm2-removed">{{ player.NAME }}{% if player.TEMPORARY %} *{% endif %}</span>{% else %}{{ player.NAME }}{% if player.TEMPORARY %} *{% endif %}{% endif %}
-	{% if player.U_UNREGISTER %} <a href="{{ player.U_UNREGISTER }}" class="bm2-action">{{ lang('BM2_UNREGISTER') }}</a>{% endif %}
-	{% if player.U_CONFIRM %} - <a href="{{ player.U_CONFIRM }}" class="bm2-action">{{ lang('BM2_CONFIRM') }}</a>{% endif %}
-	{% if player.U_VALIDATE %} <a href="{{ player.U_VALIDATE }}" class="bm2-action">{{ lang('BM2_VALIDATE') }}</a>{% endif %}
-	{% if player.U_REMOVE %} <a href="{{ player.U_REMOVE }}" class="bm2-action">{{ lang('BM2_REMOVE_PLAYER') }}</a>{% endif %}
+	{% if player.U_CONFIRM %}{% include '@nathannau_boardmanager2/session_action.html' with {'url': player.U_CONFIRM, 'icon': 'fa-check', 'label': lang('BM2_BTN_CONFIRM'), 'title': lang('BM2_CONFIRM')} %}{% endif %}
+	{% if player.U_UNREGISTER %}{% include '@nathannau_boardmanager2/session_action.html' with {'url': player.U_UNREGISTER, 'icon': 'fa-times', 'label': lang('BM2_UNREGISTER'), 'danger': true} %}{% endif %}
+	{% if player.U_VALIDATE %}{% include '@nathannau_boardmanager2/session_action.html' with {'url': player.U_VALIDATE, 'icon': 'fa-check', 'label': lang('BM2_BTN_VALIDATE'), 'title': lang('BM2_VALIDATE')} %}{% endif %}
+	{% if player.U_REMOVE %}{% include '@nathannau_boardmanager2/session_action.html' with {'url': player.U_REMOVE, 'icon': 'fa-times', 'label': lang('BM2_REMOVE_PLAYER'), 'danger': true} %}{% endif %}
 </div>
