@@ -377,17 +377,39 @@ class rules
 	}
 
 	/**
-	* L'utilisateur est-il engagé ailleurs que par sa ligne $player_id ?
+	* L'utilisateur est-il engagé ailleurs que par ses lignes $player_ids ?
+	*
+	* @param int|int[] $player_ids
 	*/
-	public function is_engaged_except(array $state, $user_id, $player_id)
+	public function is_engaged_except(array $state, $user_id, $player_ids)
 	{
+		$player_ids = array_map('intval', (array) $player_ids);
 		foreach ($state['players'] as $table_id => $players)
 		{
-			$state['players'][$table_id] = array_filter($players, function ($player) use ($player_id) {
-				return (int) $player['player_id'] !== (int) $player_id;
+			$state['players'][$table_id] = array_filter($players, function ($player) use ($player_ids) {
+				return !in_array((int) $player['player_id'], $player_ids, true);
 			});
 		}
 		return $this->is_engaged($state, $user_id);
+	}
+
+	/**
+	* Pré-inscriptions actives d'un utilisateur sur les autres tables que $table_id
+	*
+	* @return array table_id => ligne du joueur
+	*/
+	public function temporary_elsewhere(array $state, $user_id, $table_id)
+	{
+		$rows = array();
+		foreach ($state['tables'] as $other_id => $table)
+		{
+			$player = $other_id !== (int) $table_id ? $this->find_user($state['players'][$other_id], $user_id) : null;
+			if ($player && $player['temporary'])
+			{
+				$rows[$other_id] = $player;
+			}
+		}
+		return $rows;
 	}
 
 	/**

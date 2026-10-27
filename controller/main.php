@@ -12,6 +12,7 @@ namespace nathannau\boardmanager2\controller;
 
 use nathannau\boardmanager2\core\action_exception;
 use nathannau\boardmanager2\core\actions;
+use nathannau\boardmanager2\core\discord_sync;
 use nathannau\boardmanager2\core\poster;
 use nathannau\boardmanager2\core\renderer;
 use nathannau\boardmanager2\core\rules;
@@ -37,6 +38,9 @@ class main
 
 	/** @var poster */
 	protected $poster;
+
+	/** @var discord_sync */
+	protected $sync;
 
 	/** @var \nathannau\boardmanager2\core\actor membre connecté */
 	protected $actor;
@@ -68,13 +72,14 @@ class main
 	/** @var string lien de retour affiché avec les erreurs */
 	protected $back_url = '';
 
-	public function __construct(store $store, rules $rules, renderer $renderer, actions $actions, poster $poster, \phpbb\db\driver\driver_interface $db, \phpbb\user $user, \phpbb\request\request $request, \phpbb\template\template $template, \phpbb\controller\helper $helper, \phpbb\language\language $language, $root_path, $php_ext)
+	public function __construct(store $store, rules $rules, renderer $renderer, actions $actions, poster $poster, discord_sync $sync, \phpbb\db\driver\driver_interface $db, \phpbb\user $user, \phpbb\request\request $request, \phpbb\template\template $template, \phpbb\controller\helper $helper, \phpbb\language\language $language, $root_path, $php_ext)
 	{
 		$this->store = $store;
 		$this->rules = $rules;
 		$this->renderer = $renderer;
 		$this->actions = $actions;
 		$this->poster = $poster;
+		$this->sync = $sync;
 		$this->db = $db;
 		$this->user = $user;
 		$this->request = $request;
@@ -136,7 +141,8 @@ class main
 				$this->commit();
 
 				$this->reply($topic['topic_id'], $this->language->lang('BM2_AUTO_CONFIGURE', $this->renderer->format_session_date($timestamp)));
-				redirect($this->back_url);
+				$session = $this->store->get_session_by_topic($topic['topic_id']);
+				$this->done($session['session_id'], $this->back_url);
 			}
 		}
 
@@ -226,7 +232,7 @@ class main
 				$this->commit();
 
 				$message = $this->language->lang('BM2_AUTO_OPEN', $data['name'], $data['start_time'], $data['min_players'], $data['max_players']);
-				redirect($this->reply($topic['topic_id'], $message));
+				$this->done($session['session_id'], $this->reply($topic['topic_id'], $message));
 			}
 		}
 
@@ -311,7 +317,7 @@ class main
 				$this->commit();
 
 				$message = $this->language->lang('BM2_AUTO_EDIT', $data['name'], $mj['username'], $data['start_time'], $data['min_players'], $data['max_players']);
-				redirect($this->reply($topic['topic_id'], $message));
+				$this->done($session['session_id'], $this->reply($topic['topic_id'], $message));
 			}
 		}
 
@@ -338,7 +344,7 @@ class main
 		$this->load_session($session);
 		try
 		{
-			redirect($this->actions->register($this->actor(), $session, $table));
+			$this->done($session, $this->actions->register($this->actor(), $session, $table));
 		}
 		catch (action_exception $e)
 		{
@@ -356,7 +362,7 @@ class main
 		$this->load_session($session);
 		try
 		{
-			redirect($this->actions->unregister($this->actor(), $session, $table));
+			$this->done($session, $this->actions->unregister($this->actor(), $session, $table));
 		}
 		catch (action_exception $e)
 		{
@@ -385,7 +391,7 @@ class main
 		{
 			$lines[] = $this->language->lang('BM2_AUTO_MOVED', $player['username']);
 		}
-		redirect($this->reply($topic['topic_id'], implode("\n", $lines)));
+		$this->done($session['session_id'], $this->reply($topic['topic_id'], implode("\n", $lines)));
 	}
 
 	/**
@@ -443,7 +449,7 @@ class main
 				$this->commit();
 
 				$key = $temporary ? 'BM2_AUTO_PREREGISTER_PLAYER' : 'BM2_AUTO_ADD_PLAYER';
-				redirect($this->reply($topic['topic_id'], $this->language->lang($key, $name, $table['name'], $this->mj_name($table))));
+				$this->done($session['session_id'], $this->reply($topic['topic_id'], $this->language->lang($key, $name, $table['name'], $this->mj_name($table))));
 			}
 		}
 
@@ -498,7 +504,7 @@ class main
 		}
 		$this->commit();
 
-		redirect($this->reply($topic['topic_id'], $this->language->lang('BM2_AUTO_VALIDATE_PLAYER', $player['username'], $table['name'], $this->mj_name($table))));
+		$this->done($session['session_id'], $this->reply($topic['topic_id'], $this->language->lang('BM2_AUTO_VALIDATE_PLAYER', $player['username'], $table['name'], $this->mj_name($table))));
 	}
 
 	/**
@@ -536,7 +542,7 @@ class main
 		$message = $table
 			? $this->language->lang('BM2_AUTO_REMOVE_PLAYER', $player['username'], $table['name'], $this->mj_name($table))
 			: $this->language->lang('BM2_AUTO_REMOVE_PLAYER_NO_TABLE', $player['username']);
-		redirect($this->reply($topic['topic_id'], $message));
+		$this->done($session['session_id'], $this->reply($topic['topic_id'], $message));
 	}
 
 	// Contrôles communs
@@ -728,6 +734,16 @@ class main
 			$message .= '<br /><br />' . $this->language->lang('BM2_BACK_TO_TOPIC', '<a href="' . $this->back_url . '">', '</a>');
 		}
 		trigger_error($message, E_USER_WARNING);
+	}
+
+	/**
+	* Fin d'une action réussie : mise à jour de la publication Discord de la séance
+	* (sans jamais bloquer l'action), puis retour au sujet
+	*/
+	protected function done($session_id, $url)
+	{
+		$this->sync->sync_session($session_id);
+		redirect($url);
 	}
 
 	/**

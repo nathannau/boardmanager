@@ -122,6 +122,29 @@ $lang = array_merge($lang, array(
 	'BM2_DISCORD_LINKED'			=> 'C’est fait : ton compte Discord est lié au compte du forum **%s**.',
 	'BM2_DISCORD_CODE_INVALID'		=> 'Ce code n’est pas valable ou a expiré. Génère un nouveau code dans ton profil du forum (Profil → Discord).',
 	'BM2_DISCORD_TOO_MANY_TRIES'	=> 'Trop de codes erronés : réessaie dans un quart d’heure.',
+	'BM2_DISCORD_NOT_LINKED'		=> 'Pour t’inscrire depuis Discord, lie d’abord ton compte : dans ton profil du forum (Profil → Discord), génère un code puis tape /lier CODE ici. %s',
+	'BM2_DISCORD_AUTO_PREFIX'		=> 'Message auto :',
+	'BM2_DISCORD_NO_ACCOUNT'		=> 'Le compte du forum lié à ce compte Discord est introuvable ou désactivé.',
+
+	// Discord : publication d'une séance
+	'BM2_DISCORD_POST_TITLE'		=> 'Séance du %s',
+	'BM2_DISCORD_TAG_OPEN'			=> 'À venir',
+	'BM2_DISCORD_TAG_PAST'			=> 'Terminée',
+	'BM2_DISCORD_PAST'				=> 'Séance terminée.',
+	'BM2_DISCORD_HOWTO'				=> 'Inscris-toi avec les boutons ci-dessous (compte Discord lié au forum : Profil → Discord). La séance et ses messages sont aussi sur le forum, via le titre.',
+	'BM2_DISCORD_MJ'				=> 'MJ : **%s**',
+	'BM2_DISCORD_PLACES'			=> '%1$d/%2$d joueurs',
+	'BM2_DISCORD_MISSING'			=> array(
+		1	=> 'il manque %d joueur',
+		2	=> 'il manque %d joueurs',
+	),
+	'BM2_DISCORD_LEGEND_TEMPORARY'	=> '* pré-inscription à confirmer',
+	'BM2_DISCORD_LEGEND_LATE'		=> '⏰ inscription moins de 4 jours avant la séance',
+	'BM2_DISCORD_BTN_REGISTER'		=> 'M’inscrire : %1$s de %2$s',
+	'BM2_DISCORD_BTN_REGISTER_NO_MJ'	=> 'M’inscrire : %s',
+	'BM2_DISCORD_BTN_NO_TABLE'		=> 'Sans table',
+	'BM2_DISCORD_BTN_UNREGISTER'	=> 'Annuler ma présence',
+	'BM2_DISCORD_SELECT'			=> 'Choisis une table pour t’inscrire',
 	'BM2_DISCORD_ALREADY_LINKED_OTHER'	=> 'Ce compte Discord est déjà lié à un autre compte du forum. Délie-le d’abord depuis ce compte (Profil → Discord).',
 
 	// Messages auto
@@ -129,6 +152,7 @@ $lang = array_merge($lang, array(
 	'BM2_AUTO_REGISTER_NO_TABLE'	=> 'Message auto : Inscription en sans table',
 	'BM2_AUTO_REGISTER_TABLE'		=> 'Message auto : Inscription sur la table \'%1$s\' de \'%2$s\'',
 	'BM2_AUTO_UNREGISTER_NO_TABLE'	=> 'Message auto : Désinscription de sans table',
+	'BM2_AUTO_CANCEL_PREREGISTRATION'	=> 'Message auto : Annulation de la pré-inscription sur la table \'%1$s\' de \'%2$s\'',
 	'BM2_AUTO_UNREGISTER_TABLE'		=> 'Message auto : Désinscription de la table \'%1$s\' de \'%2$s\'',
 	'BM2_AUTO_OPEN'					=> 'Message auto : Ajout de la table \'%1$s\' à %2$s pour %3$d à %4$d',
 	'BM2_AUTO_EDIT'					=> 'Message auto : Modification de la table \'%1$s\' de \'%2$s\' : %3$s, %4$d à %5$d joueurs',

@@ -38,6 +38,9 @@ class actions
 	/** @var \phpbb\language\language */
 	protected $language;
 
+	/** @var string texte du dernier message auto posté (repris par Discord pour sa confirmation) */
+	public $last_message = '';
+
 	public function __construct(store $store, rules $rules, poster $poster, \phpbb\db\driver\driver_interface $db, \phpbb\user $user, \phpbb\auth\auth $auth, \phpbb\language\language $language)
 	{
 		$this->store = $store;
@@ -167,8 +170,15 @@ class actions
 					throw new action_exception('BM2_ERROR_ENGAGED');
 				}
 
-				// Une pré-inscription ne compte pas comme engagement pour la confirmer
-				if ($confirm ? $this->rules->is_engaged_except($state, $user_id, $own['player_id']) : $this->rules->is_engaged($state, $user_id))
+				// Une pré-inscription (sur cette table ou une autre) n'empêche pas de s'inscrire :
+				// sur cette table elle est confirmée, sur une autre elle est annulée
+				$elsewhere = $this->rules->temporary_elsewhere($state, $user_id, $table_id);
+				$ignored = array_column($elsewhere, 'player_id');
+				if ($confirm)
+				{
+					$ignored[] = $own['player_id'];
+				}
+				if ($this->rules->is_engaged_except($state, $user_id, $ignored))
 				{
 					throw new action_exception('BM2_ERROR_ENGAGED');
 				}
@@ -183,13 +193,21 @@ class actions
 						throw new action_exception('BM2_ERROR_FULL');
 					}
 				}
-				$message = $this->language->lang('BM2_AUTO_REGISTER_TABLE', $table['name'], $table['mj_username']);
+				$lines = array();
+				foreach ($elsewhere as $other_id => $player)
+				{
+					$this->store->remove_player($player['player_id']);
+					$lines[] = $this->language->lang('BM2_AUTO_CANCEL_PREREGISTRATION', $state['tables'][$other_id]['name'], $state['tables'][$other_id]['mj_username']);
+				}
+				$lines[] = $this->language->lang('BM2_AUTO_REGISTER_TABLE', $table['name'], $table['mj_username']);
+				$message = implode("\n", $lines);
 			}
 
 			$this->rules->register_user($state, $table_id, $user_id, $actor->username, $user_id);
 			return $message;
 		});
 
+		$this->last_message = $message;
 		return $this->poster->reply($topic['topic_id'], $message, $actor);
 	}
 
@@ -222,6 +240,7 @@ class actions
 				: $this->language->lang('BM2_AUTO_UNREGISTER_NO_TABLE');
 		});
 
+		$this->last_message = $message;
 		return $this->poster->reply($topic['topic_id'], $message, $actor);
 	}
 

@@ -51,7 +51,7 @@ class discord_api
 
 	/**
 	* @return array réponse décodée
-	* @throws \RuntimeException message d'erreur de Discord
+	* @throws discord_exception message d'erreur de Discord, code = statut HTTP
 	*/
 	public function request($method, $path, $body = null)
 	{
@@ -77,14 +77,14 @@ class discord_api
 		}
 		catch (\GuzzleHttp\Exception\GuzzleException $e)
 		{
-			throw new \RuntimeException('Discord injoignable : ' . $e->getMessage());
+			throw new discord_exception('Discord injoignable : ' . $e->getMessage(), 0);
 		}
 
 		$data = json_decode((string) $response->getBody(), true);
 		if ($response->getStatusCode() >= 300)
 		{
 			$detail = is_array($data) && isset($data['message']) ? $data['message'] : (string) $response->getBody();
-			throw new \RuntimeException('Discord a répondu ' . $response->getStatusCode() . ' : ' . $detail);
+			throw new discord_exception('Discord a répondu ' . $response->getStatusCode() . ' : ' . $detail, $response->getStatusCode());
 		}
 		return is_array($data) ? $data : array();
 	}
@@ -95,6 +95,45 @@ class discord_api
 	public function put_guild_commands($guild_id, array $commands)
 	{
 		return $this->request('PUT', 'applications/' . rawurlencode($this->config['bm2_discord_app_id']) . '/guilds/' . rawurlencode($guild_id) . '/commands', $commands);
+	}
+
+	/**
+	* Salon (ou fil) : pour un salon Forum, contient ses étiquettes (available_tags)
+	*/
+	public function get_channel($channel_id)
+	{
+		return $this->request('GET', 'channels/' . rawurlencode($channel_id));
+	}
+
+	/**
+	* Nouvelle publication dans un salon Forum ; son premier message porte le même identifiant que le fil
+	*
+	* @param array $message contenu du premier message (content, embeds, components…)
+	*/
+	public function create_forum_post($channel_id, $name, array $message, array $tag_ids)
+	{
+		return $this->request('POST', 'channels/' . rawurlencode($channel_id) . '/threads', array(
+			'name'					=> $name,
+			'auto_archive_duration'	=> 10080,
+			'applied_tags'			=> array_values($tag_ids),
+			'message'				=> $message,
+		));
+	}
+
+	/**
+	* Modifie un fil (titre, étiquettes, verrouillage, archivage)
+	*/
+	public function edit_thread($thread_id, array $changes)
+	{
+		return $this->request('PATCH', 'channels/' . rawurlencode($thread_id), $changes);
+	}
+
+	/**
+	* Modifie un message (ici : le premier message d'une publication)
+	*/
+	public function edit_message($channel_id, $message_id, array $message)
+	{
+		return $this->request('PATCH', 'channels/' . rawurlencode($channel_id) . '/messages/' . rawurlencode($message_id), $message);
 	}
 
 	/**

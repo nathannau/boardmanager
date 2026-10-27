@@ -76,6 +76,7 @@ $lang = array_merge($lang, array(
 	'ACP_BM2_DISCORD_ERROR_ID'			=> '%s : un identifiant Discord est un nombre de 15 à 25 chiffres.',
 	'ACP_BM2_DISCORD_ERROR_PUBLIC_KEY'	=> 'La clé publique doit faire 64 caractères hexadécimaux.',
 
+	'LOG_BM2_DISCORD_SYNC_ERROR'		=> '<strong>Board Manager : échec de mise à jour de la publication Discord</strong><br />» séance %1$d : %2$s',
 	'LOG_BM2_DISCORD_LINKED'			=> '<strong>Board Manager : compte Discord lié</strong><br />» %1$s ↔ %2$s',
 	'LOG_BM2_DISCORD_UNLINKED'			=> '<strong>Board Manager : compte Discord délié</strong><br />» %1$s ↔ %2$s',
 

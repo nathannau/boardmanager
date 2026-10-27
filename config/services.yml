@@ -4,6 +4,7 @@ parameters:
     nathannau.boardmanager2.tables.players: '%core.table_prefix%bm2_players'
     nathannau.boardmanager2.tables.discord_links: '%core.table_prefix%bm2_discord_links'
     nathannau.boardmanager2.tables.discord_codes: '%core.table_prefix%bm2_discord_codes'
+    nathannau.boardmanager2.tables.discord_messages: '%core.table_prefix%bm2_discord_messages'
 
 services:
     nathannau.boardmanager2.store:
@@ -68,6 +69,7 @@ services:
             - '@nathannau.boardmanager2.renderer'
             - '@nathannau.boardmanager2.actions'
             - '@nathannau.boardmanager2.poster'
+            - '@nathannau.boardmanager2.discord_sync'
             - '@dbal.conn'
             - '@user'
             - '@request'
@@ -113,6 +115,11 @@ services:
             - '@log'
             - '@nathannau.boardmanager2.discord_links'
             - '@dbal.conn'
+            - '@nathannau.boardmanager2.actions'
+            - '@nathannau.boardmanager2.rules'
+            - '@nathannau.boardmanager2.store'
+            - '@nathannau.boardmanager2.discord_panel'
+            - '@nathannau.boardmanager2.discord_sync'
 
     nathannau.boardmanager2.console.discord_commands:
         class: nathannau\boardmanager2\console\discord_commands
@@ -122,3 +129,34 @@ services:
             - '@nathannau.boardmanager2.discord_api'
         tags:
             - { name: console.command }
+
+    nathannau.boardmanager2.discord_panel:
+        class: nathannau\boardmanager2\core\discord_panel
+        arguments:
+            - '@nathannau.boardmanager2.rules'
+            - '@nathannau.boardmanager2.renderer'
+            - '@language'
+            - '@dbal.conn'
+
+    nathannau.boardmanager2.discord_sync:
+        class: nathannau\boardmanager2\core\discord_sync
+        arguments:
+            - '@config'
+            - '@nathannau.boardmanager2.discord_api'
+            - '@nathannau.boardmanager2.discord_panel'
+            - '@nathannau.boardmanager2.store'
+            - '@nathannau.boardmanager2.rules'
+            - '@dbal.conn'
+            - '@log'
+            - '%nathannau.boardmanager2.tables.discord_messages%'
+            - '%nathannau.boardmanager2.tables.sessions%'
+
+    nathannau.boardmanager2.cron.discord_sync:
+        class: nathannau\boardmanager2\cron\discord_sync
+        arguments:
+            - '@config'
+            - '@nathannau.boardmanager2.discord_sync'
+        calls:
+            - [set_name, [cron.task.nathannau.boardmanager2.discord_sync]]
+        tags:
+            - { name: cron.task }

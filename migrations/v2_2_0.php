@@ -87,6 +87,7 @@ class v2_2_0 extends \phpbb\db\migration\migration
 			array('config.add', array('bm2_discord_public_key', '')),
 			array('config.add', array('bm2_discord_guild_id', '')),
 			array('config.add', array('bm2_discord_channel_id', '')),
+			array('config.add', array('bm2_discord_sync_last', 0, true)),
 			// Secret : hors de la table config (mise en cache et chargée à chaque page)
 			array('config_text.add', array('bm2_discord_bot_token', '')),
 

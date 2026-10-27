@@ -142,6 +142,7 @@ class main_module
 				$store->begin();
 				$store->delete_session($session['session_id']);
 				$store->commit();
+				$this->container->get('nathannau.boardmanager2.discord_sync')->forget($session['session_id']);
 				$log->add('admin', $user->data['user_id'], $user->ip, 'LOG_BM2_ORPHAN_DELETED', false, array($label, $session['topic_id']));
 				trigger_error($this->language->lang('ACP_BOARDMANAGER2_ORPHAN_DELETED') . adm_back_link($this->u_action));
 			}
@@ -165,6 +166,7 @@ class main_module
 				trigger_error($error . adm_back_link($this->u_action), E_USER_WARNING);
 			}
 			$store->move_session($session['session_id'], $topic_id);
+			$this->container->get('nathannau.boardmanager2.discord_sync')->sync_session($session['session_id']);
 			$log->add('admin', $user->data['user_id'], $user->ip, 'LOG_BM2_ORPHAN_MOVED', false, array($label, $session['topic_id'], $topic_id));
 			trigger_error($this->language->lang('ACP_BOARDMANAGER2_ORPHAN_MOVED', $topic_id) . adm_back_link($this->u_action));
 		}

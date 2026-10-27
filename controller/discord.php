@@ -11,7 +11,12 @@
 namespace nathannau\boardmanager2\controller;
 
 use nathannau\boardmanager2\core\action_exception;
+use nathannau\boardmanager2\core\actions;
 use nathannau\boardmanager2\core\discord_links;
+use nathannau\boardmanager2\core\discord_panel;
+use nathannau\boardmanager2\core\discord_sync;
+use nathannau\boardmanager2\core\rules;
+use nathannau\boardmanager2\core\store;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -24,6 +29,7 @@ class discord
 	// Types d'interaction et de réponse (API Discord)
 	const PING = 1;
 	const APPLICATION_COMMAND = 2;
+	const MESSAGE_COMPONENT = 3;
 	const RESPONSE_PONG = 1;
 	const RESPONSE_MESSAGE = 4;
 	const FLAG_EPHEMERAL = 64;
@@ -52,9 +58,29 @@ class discord
 	/** @var \phpbb\db\driver\driver_interface */
 	protected $db;
 
-	public function __construct(\phpbb\config\config $config, \Symfony\Component\HttpFoundation\Request $symfony_request, \phpbb\language\language $language, \phpbb\user $user, \phpbb\log\log_interface $log, discord_links $links, \phpbb\db\driver\driver_interface $db)
+	/** @var actions */
+	protected $actions;
+
+	/** @var rules */
+	protected $rules;
+
+	/** @var store */
+	protected $store;
+
+	/** @var discord_panel */
+	protected $panel;
+
+	/** @var discord_sync */
+	protected $sync;
+
+	public function __construct(\phpbb\config\config $config, \Symfony\Component\HttpFoundation\Request $symfony_request, \phpbb\language\language $language, \phpbb\user $user, \phpbb\log\log_interface $log, discord_links $links, \phpbb\db\driver\driver_interface $db, actions $actions, rules $rules, store $store, discord_panel $panel, discord_sync $sync)
 	{
 		$this->db = $db;
+		$this->actions = $actions;
+		$this->rules = $rules;
+		$this->store = $store;
+		$this->panel = $panel;
+		$this->sync = $sync;
 		$this->config = $config;
 		$this->symfony_request = $symfony_request;
 		$this->language = $language;
@@ -101,6 +127,10 @@ class discord
 		{
 			return $this->command_link($interaction, $discord_user);
 		}
+		if ((int) $interaction['type'] === self::MESSAGE_COMPONENT && isset($interaction['data']['custom_id']))
+		{
+			return $this->component($interaction, $discord_user);
+		}
 		return $this->ephemeral($this->language->lang('BM2_DISCORD_UNKNOWN'));
 	}
 
@@ -130,6 +160,129 @@ class discord
 		$username = $this->username($user_id);
 		$this->log->add('admin', $user_id, $this->user->ip, 'LOG_BM2_DISCORD_LINKED', false, array($username, $discord_user['username']));
 		return $this->ephemeral($this->language->lang('BM2_DISCORD_LINKED', $this->markdown($username)));
+	}
+
+	/**
+	* Clic sur un bouton (ou choix dans le menu) du tableau d'une séance : l'action est faite
+	* au nom du membre lié, puis le tableau est mis à jour pour tous (confirmation publique).
+	* Un refus n'est montré qu'au membre.
+	*/
+	protected function component(array $interaction, array $discord_user)
+	{
+		$parts = explode(':', (string) $interaction['data']['custom_id']);
+		if (count($parts) < 3 || $parts[0] !== 'bm2' || !ctype_digit($parts[2]))
+		{
+			return $this->ephemeral($this->language->lang('BM2_DISCORD_UNKNOWN'));
+		}
+		$action = $parts[0] . ':' . $parts[1];
+		$session_id = (int) $parts[2];
+
+		$link = $this->links->get_by_discord($discord_user['id']);
+		if (!$link)
+		{
+			return $this->ephemeral($this->language->lang('BM2_DISCORD_NOT_LINKED', generate_board_url() . '/ucp.php?i=-nathannau-boardmanager2-ucp-main_module&mode=discord'));
+		}
+		$actor = $this->actions->actor_for_user($link['user_id']);
+		if (!$actor)
+		{
+			return $this->ephemeral($this->language->lang('BM2_DISCORD_NO_ACCOUNT'));
+		}
+
+		try
+		{
+			switch ($action)
+			{
+				case discord_panel::ID_REGISTER:
+					$this->actions->register($actor, $session_id, isset($parts[3]) ? (int) $parts[3] : 0);
+				break;
+
+				case discord_panel::ID_SELECT:
+					$values = isset($interaction['data']['values']) ? $interaction['data']['values'] : array();
+					$this->actions->register($actor, $session_id, $values ? (int) $values[0] : 0);
+				break;
+
+				case discord_panel::ID_UNREGISTER:
+					$this->actions->unregister($actor, $session_id, $this->own_table($actor->user_id, $session_id));
+				break;
+
+				default:
+					return $this->ephemeral($this->language->lang('BM2_DISCORD_UNKNOWN'));
+			}
+		}
+		catch (action_exception $e)
+		{
+			return $this->ephemeral('❌ ' . discord_panel::plain($this->language->lang($e->key, ...$e->args)));
+		}
+
+		// Le tableau est mis à jour par l'API (rattrapé par la tâche cron en cas d'échec),
+		// et le clic reçoit une confirmation publique dans la publication, comme les messages auto du forum
+		$this->sync->sync_session($session_id);
+		return $this->public_message($this->confirmation($actor->username, $this->actions->last_message));
+	}
+
+	/**
+	* « ✅ **Pseudo** : Inscription sur la table 'Dune' de 'melkor' », depuis le message auto du forum
+	*/
+	protected function confirmation($username, $message)
+	{
+		$lines = array();
+		foreach (explode("\n", $message) as $line)
+		{
+			$line = trim(preg_replace('/^' . preg_quote($this->language->lang('BM2_DISCORD_AUTO_PREFIX'), '/') . '\s*/u', '', trim($line)));
+			if ($line !== '')
+			{
+				$lines[] = discord_panel::markdown($line);
+			}
+		}
+		return '✅ **' . discord_panel::markdown($username) . '** : ' . implode("\n", $lines);
+	}
+
+	/**
+	* Message visible de tous dans la publication
+	*/
+	protected function public_message($text)
+	{
+		return new JsonResponse(array(
+			'type'	=> self::RESPONSE_MESSAGE,
+			'data'	=> array(
+				'content'			=> $text,
+				'allowed_mentions'	=> array('parse' => array()),
+			),
+		));
+	}
+
+	/**
+	* Table où annuler la présence du membre : une table d'abord, sinon le sans table
+	*
+	* @return int table_id (0 pour le sans table)
+	* @throws action_exception
+	*/
+	protected function own_table($user_id, $session_id)
+	{
+		$session = $this->store->get_session($session_id);
+		if (!$session)
+		{
+			throw new action_exception('BM2_ERROR_NOT_FOUND');
+		}
+		$state = $this->rules->load($session);
+		$fallback = null;
+		foreach ($state['players'] as $table_id => $players)
+		{
+			if (!$this->rules->find_user($players, $user_id))
+			{
+				continue;
+			}
+			if ($table_id)
+			{
+				return $table_id;
+			}
+			$fallback = 0;
+		}
+		if ($fallback === null)
+		{
+			throw new action_exception('BM2_ERROR_NOT_REGISTERED');
+		}
+		return $fallback;
 	}
 
 	/**
