@@ -198,6 +198,14 @@ class rules
 	}
 
 	/**
+	* Séance passée : à partir du lendemain de sa date
+	*/
+	public function is_past(array $session)
+	{
+		return $this->midnight(time()) > (int) $session['session_date'];
+	}
+
+	/**
 	* Inscrit tardif (affiché en rouge) : moins de LIMIT_DAYS jours avant la séance
 	*/
 	public function is_late(array $player, array $session)

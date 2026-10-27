@@ -93,6 +93,10 @@ class main
 		}
 
 		$session = $this->store->get_session_by_topic($topic['topic_id']);
+		if ($session && $this->rules->is_past($session) && !$this->is_manager())
+		{
+			$this->error('BM2_ERROR_PAST');
+		}
 		$date = $this->request->variable('session_date', $session ? $this->rules->format_date($session['session_date']) : '');
 		$errors = array();
 
@@ -661,7 +665,13 @@ class main
 		{
 			$this->error('BM2_ERROR_NOT_FOUND');
 		}
-		return array($session, $this->load_topic($session['topic_id']));
+		$topic = $this->load_topic($session['topic_id']);
+		// Séance passée : seule la date reste modifiable (par un gestionnaire, voir configure())
+		if ($this->rules->is_past($session))
+		{
+			$this->error('BM2_ERROR_PAST');
+		}
+		return array($session, $topic);
 	}
 
 	/**

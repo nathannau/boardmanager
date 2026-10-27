@@ -95,6 +95,7 @@ $lang = array_merge($lang, array(
 	// Erreurs
 	'BM2_ERROR_NOT_FOUND'			=> 'Cette séance ou cette table n’existe pas.',
 	'BM2_ERROR_NO_MARKER'			=> 'Ce message ne contient pas de séance [boardmanager2][/boardmanager2].',
+	'BM2_ERROR_PAST'				=> 'Cette séance est passée : elle ne peut plus être modifiée.',
 	'BM2_ERROR_NOT_ALLOWED'			=> 'Vous n’avez pas le droit d’effectuer cette action.',
 	'BM2_ERROR_LINK'				=> 'Le lien utilisé n’est pas valide. Retournez sur le sujet et réessayez.',
 	'BM2_ERROR_DATE'				=> 'La date n’est pas valide.',

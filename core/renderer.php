@@ -115,11 +115,38 @@ class renderer
 		if ($session)
 		{
 			$data = array_merge($data, $this->session_data($session, $user_id, $logged, $manager));
+
+			// Séance passée : plus aucune action, sauf la date pour les gestionnaires
+			if ($this->rules->is_past($session))
+			{
+				$configure = $manager ? $data['U_CONFIGURE'] : '';
+				$data = $this->without_actions($data);
+				$data['U_CONFIGURE'] = $configure;
+			}
 		}
 
 		$this->template->assign_var('BM2', $data);
 		$this->template->set_filenames(array('bm2_session' => '@nathannau_boardmanager2/session.html'));
 		return $this->template->assign_display('bm2_session');
+	}
+
+	/**
+	* Vide tous les liens d'action (clés U_*) des données du template
+	*/
+	protected function without_actions(array $data)
+	{
+		foreach ($data as $key => $value)
+		{
+			if (is_array($value))
+			{
+				$data[$key] = $this->without_actions($value);
+			}
+			else if (is_string($key) && strpos($key, 'U_') === 0)
+			{
+				$data[$key] = '';
+			}
+		}
+		return $data;
 	}
 
 	protected function session_data(array $session, $user_id, $logged, $manager)
