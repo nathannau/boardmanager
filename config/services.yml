@@ -37,15 +37,36 @@ services:
         tags:
             - { name: event.listener }
 
+    nathannau.boardmanager2.poster:
+        class: nathannau\boardmanager2\core\poster
+        arguments:
+            - '@dbal.conn'
+            - '@user'
+            - '@auth'
+            - '%core.root_path%'
+            - '%core.php_ext%'
+
+    nathannau.boardmanager2.actions:
+        class: nathannau\boardmanager2\core\actions
+        arguments:
+            - '@nathannau.boardmanager2.store'
+            - '@nathannau.boardmanager2.rules'
+            - '@nathannau.boardmanager2.poster'
+            - '@dbal.conn'
+            - '@user'
+            - '@auth'
+            - '@language'
+
     nathannau.boardmanager2.main:
         class: nathannau\boardmanager2\controller\main
         arguments:
             - '@nathannau.boardmanager2.store'
             - '@nathannau.boardmanager2.rules'
             - '@nathannau.boardmanager2.renderer'
+            - '@nathannau.boardmanager2.actions'
+            - '@nathannau.boardmanager2.poster'
             - '@dbal.conn'
             - '@user'
-            - '@auth'
             - '@request'
             - '@template'
             - '@controller.helper'

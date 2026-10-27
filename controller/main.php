@@ -10,6 +10,9 @@
 
 namespace nathannau\boardmanager2\controller;
 
+use nathannau\boardmanager2\core\action_exception;
+use nathannau\boardmanager2\core\actions;
+use nathannau\boardmanager2\core\poster;
 use nathannau\boardmanager2\core\renderer;
 use nathannau\boardmanager2\core\rules;
 use nathannau\boardmanager2\core\store;
@@ -29,14 +32,20 @@ class main
 	/** @var renderer */
 	protected $renderer;
 
+	/** @var actions */
+	protected $actions;
+
+	/** @var poster */
+	protected $poster;
+
+	/** @var \nathannau\boardmanager2\core\actor membre connecté */
+	protected $actor;
+
 	/** @var \phpbb\db\driver\driver_interface */
 	protected $db;
 
 	/** @var \phpbb\user */
 	protected $user;
-
-	/** @var \phpbb\auth\auth */
-	protected $auth;
 
 	/** @var \phpbb\request\request */
 	protected $request;
@@ -59,14 +68,15 @@ class main
 	/** @var string lien de retour affiché avec les erreurs */
 	protected $back_url = '';
 
-	public function __construct(store $store, rules $rules, renderer $renderer, \phpbb\db\driver\driver_interface $db, \phpbb\user $user, \phpbb\auth\auth $auth, \phpbb\request\request $request, \phpbb\template\template $template, \phpbb\controller\helper $helper, \phpbb\language\language $language, $root_path, $php_ext)
+	public function __construct(store $store, rules $rules, renderer $renderer, actions $actions, poster $poster, \phpbb\db\driver\driver_interface $db, \phpbb\user $user, \phpbb\request\request $request, \phpbb\template\template $template, \phpbb\controller\helper $helper, \phpbb\language\language $language, $root_path, $php_ext)
 	{
 		$this->store = $store;
 		$this->rules = $rules;
 		$this->renderer = $renderer;
+		$this->actions = $actions;
+		$this->poster = $poster;
 		$this->db = $db;
 		$this->user = $user;
-		$this->auth = $auth;
 		$this->request = $request;
 		$this->template = $template;
 		$this->helper = $helper;
@@ -325,61 +335,15 @@ class main
 	{
 		$this->init();
 		$this->check_link('nathannau_boardmanager2_register', array('session' => $session, 'table' => $table));
-		list($session, $topic) = $this->load_session($session);
-		$table_id = (int) $table;
-		$user_id = $this->user_id();
-
-		$this->begin();
-		$state = $this->rules->load($session);
-		if ($table_id && !isset($state['tables'][$table_id]))
+		$this->load_session($session);
+		try
 		{
-			$this->error('BM2_ERROR_NOT_FOUND');
+			redirect($this->actions->register($this->actor(), $session, $table));
 		}
-
-		if (!$table_id)
+		catch (action_exception $e)
 		{
-			if ($this->rules->is_engaged($state, $user_id))
-			{
-				$this->error('BM2_ERROR_ENGAGED');
-			}
-			if ($this->rules->find_user($state['players'][0], $user_id))
-			{
-				$this->error('BM2_ERROR_ALREADY_NO_TABLE');
-			}
-			$message = $this->language->lang('BM2_AUTO_REGISTER_NO_TABLE');
+			$this->error($e->key, ...$e->args);
 		}
-		else
-		{
-			$own = $this->rules->find_user($state['players'][$table_id], $user_id);
-			$confirm = $own && $own['temporary'];
-			if ($own && !$confirm)
-			{
-				$this->error('BM2_ERROR_ENGAGED');
-			}
-
-			// Une pré-inscription ne compte pas comme engagement pour la confirmer
-			if ($confirm ? $this->rules->is_engaged_except($state, $user_id, $own['player_id']) : $this->rules->is_engaged($state, $user_id))
-			{
-				$this->error('BM2_ERROR_ENGAGED');
-			}
-			if (!$confirm)
-			{
-				if (!$this->is_manager() && !$this->rules->can_register_on_tables($state, $user_id))
-				{
-					$this->error('BM2_ERROR_LIMIT_DAYS');
-				}
-				if ($this->rules->count_players($state['players'][$table_id]) >= $state['tables'][$table_id]['max_players'])
-				{
-					$this->error('BM2_ERROR_FULL');
-				}
-			}
-			$message = $this->language->lang('BM2_AUTO_REGISTER_TABLE', $state['tables'][$table_id]['name'], $this->mj_name($state['tables'][$table_id]));
-		}
-
-		$this->rules->register_user($state, $table_id, $user_id, $this->user->data['username'], $user_id);
-		$this->commit();
-
-		redirect($this->reply($topic['topic_id'], $message));
 	}
 
 	/**
@@ -389,27 +353,15 @@ class main
 	{
 		$this->init();
 		$this->check_link('nathannau_boardmanager2_unregister', array('session' => $session, 'table' => $table));
-		list($session, $topic) = $this->load_session($session);
-		$table_id = (int) $table;
-
-		$this->begin();
-		$state = $this->rules->load($session);
-		if (!isset($state['players'][$table_id]))
+		$this->load_session($session);
+		try
 		{
-			$this->error('BM2_ERROR_NOT_FOUND');
+			redirect($this->actions->unregister($this->actor(), $session, $table));
 		}
-		$player = $this->rules->find_user($state['players'][$table_id], $this->user_id());
-		if (!$player)
+		catch (action_exception $e)
 		{
-			$this->error('BM2_ERROR_NOT_REGISTERED');
+			$this->error($e->key, ...$e->args);
 		}
-		$this->store->remove_player($player['player_id']);
-		$this->commit();
-
-		$message = $table_id
-			? $this->language->lang('BM2_AUTO_UNREGISTER_TABLE', $state['tables'][$table_id]['name'], $this->mj_name($state['tables'][$table_id]))
-			: $this->language->lang('BM2_AUTO_UNREGISTER_NO_TABLE');
-		redirect($this->reply($topic['topic_id'], $message));
 	}
 
 	/**
@@ -610,9 +562,21 @@ class main
 		return (int) $this->user->data['user_id'];
 	}
 
+	/**
+	* Le membre connecté, au nom duquel les actions sont faites
+	*/
+	protected function actor()
+	{
+		if ($this->actor === null)
+		{
+			$this->actor = $this->actions->current_actor();
+		}
+		return $this->actor;
+	}
+
 	protected function is_manager()
 	{
-		return $this->rules->is_manager($this->user->data);
+		return $this->actor()->manager;
 	}
 
 	protected function check_link($route, array $params)
@@ -639,39 +603,50 @@ class main
 	*/
 	protected function load_topic($topic_id)
 	{
-		$sql = 'SELECT * FROM ' . TOPICS_TABLE . ' WHERE topic_id = ' . (int) $topic_id;
-		$result = $this->db->sql_query($sql);
-		$topic = $this->db->sql_fetchrow($result);
-		$this->db->sql_freeresult($result);
-
-		if (!$topic || !$this->auth->acl_get('f_read', $topic['forum_id']))
+		try
 		{
-			$this->error('BM2_ERROR_NOT_FOUND');
+			$topic = $this->actions->topic_for($this->actor(), $topic_id);
 		}
-		$marker_post = $this->renderer->marker_post($topic['topic_id']);
-		$this->back_url = $marker_post
-			? append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 'p=' . $marker_post['post_id']) . '#p' . $marker_post['post_id']
-			: append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 't=' . (int) $topic['topic_id']);
+		catch (action_exception $e)
+		{
+			$this->error($e->key, ...$e->args);
+		}
+		$this->back_url = $this->topic_url($topic['topic_id']);
 		return $topic;
 	}
 
 	/**
+	* Séance existante et non passée, dans un sujet lisible par l'utilisateur
+	*
 	* @return array(session, topic)
 	*/
 	protected function load_session($session_id)
 	{
+		// Lien de retour vers le sujet, même si la séance est refusée (passée)
 		$session = $this->store->get_session($session_id);
-		if (!$session)
+		if ($session)
 		{
-			$this->error('BM2_ERROR_NOT_FOUND');
+			$this->back_url = $this->topic_url($session['topic_id']);
 		}
-		$topic = $this->load_topic($session['topic_id']);
-		// Séance passée : seule la date reste modifiable (par un gestionnaire, voir configure())
-		if ($this->rules->is_past($session))
+		try
 		{
-			$this->error('BM2_ERROR_PAST');
+			return $this->actions->session_for($this->actor(), $session_id);
 		}
-		return array($session, $topic);
+		catch (action_exception $e)
+		{
+			$this->error($e->key, ...$e->args);
+		}
+	}
+
+	/**
+	* Message portant la séance (ou le sujet)
+	*/
+	protected function topic_url($topic_id)
+	{
+		$marker_post = $this->renderer->marker_post($topic_id);
+		return $marker_post
+			? append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 'p=' . $marker_post['post_id']) . '#p' . $marker_post['post_id']
+			: append_sid("{$this->root_path}viewtopic.{$this->php_ext}", 't=' . (int) $topic_id);
 	}
 
 	/**
@@ -756,101 +731,12 @@ class main
 	}
 
 	/**
-	* Poste un message auto dans le sujet. S'il est l'auteur du dernier message
-	* (autre que le premier), le texte y est ajouté plutôt que de créer une réponse.
+	* Poste un message auto au nom de l'utilisateur connecté
 	*
-	* @param string $message texte sous la forme stockée par phpBB (entités HTML échappées),
-	*                        comme les noms lus en base
 	* @return string url du message
 	*/
 	protected function reply($topic_id, $message)
 	{
-		if (!function_exists('submit_post'))
-		{
-			include($this->root_path . 'includes/functions_posting.' . $this->php_ext);
-		}
-
-		$sql = 'SELECT * FROM ' . TOPICS_TABLE . ' WHERE topic_id = ' . (int) $topic_id;
-		$result = $this->db->sql_query($sql);
-		$topic = $this->db->sql_fetchrow($result);
-		$this->db->sql_freeresult($result);
-
-		$sql = 'SELECT forum_name FROM ' . FORUMS_TABLE . ' WHERE forum_id = ' . (int) $topic['forum_id'];
-		$result = $this->db->sql_query($sql);
-		$forum_name = $this->db->sql_fetchfield('forum_name');
-		$this->db->sql_freeresult($result);
-
-		$sql = 'SELECT * FROM ' . POSTS_TABLE . '
-			WHERE topic_id = ' . (int) $topic_id . '
-			ORDER BY post_time DESC, post_id DESC';
-		$result = $this->db->sql_query_limit($sql, 1);
-		$last = $this->db->sql_fetchrow($result);
-		$this->db->sql_freeresult($result);
-
-		$merge = $last
-			&& (int) $last['poster_id'] === $this->user_id()
-			&& (int) $last['post_id'] !== (int) $topic['topic_first_post_id'];
-
-		$uid = $bitfield = '';
-		$flags = 0;
-		if ($merge)
-		{
-			$options = ($last['enable_bbcode'] ? OPTION_FLAG_BBCODE : 0) | ($last['enable_smilies'] ? OPTION_FLAG_SMILIES : 0) | ($last['enable_magic_url'] ? OPTION_FLAG_LINKS : 0);
-			$text = generate_text_for_edit($last['post_text'], $last['bbcode_uid'], $options);
-			$text = $text['text'] . "\n\n" . $message;
-			generate_text_for_storage($text, $uid, $bitfield, $flags, (bool) $last['enable_bbcode'], (bool) $last['enable_magic_url'], (bool) $last['enable_smilies']);
-		}
-		else
-		{
-			$text = $message;
-			generate_text_for_storage($text, $uid, $bitfield, $flags, false, false, false);
-		}
-
-		$data = array(
-			'poster_id'			=> $this->user_id(),
-			'forum_id'			=> (int) $topic['forum_id'],
-			'topic_id'			=> (int) $topic_id,
-			'icon_id'			=> $merge ? (int) $last['icon_id'] : 0,
-			'enable_bbcode'		=> $merge ? (bool) $last['enable_bbcode'] : false,
-			'enable_smilies'	=> $merge ? (bool) $last['enable_smilies'] : false,
-			'enable_urls'		=> $merge ? (bool) $last['enable_magic_url'] : false,
-			'enable_sig'		=> $merge ? (bool) $last['enable_sig'] : true,
-			'message'			=> $text,
-			'message_md5'		=> md5($text),
-			'bbcode_bitfield'	=> $bitfield,
-			'bbcode_uid'		=> $uid,
-			'post_edit_reason'	=> '',
-			'post_edit_locked'	=> 0,
-			'notify_set'		=> true,
-			'notify'			=> false,
-			'post_time'			=> 0,
-			'enable_indexing'	=> true,
-			'force_approved_state'	=> true,
-			'force_visibility'	=> true,
-			'topic_posts_approved'		=> $topic['topic_posts_approved'],
-			'topic_posts_unapproved'	=> $topic['topic_posts_unapproved'],
-			'topic_posts_softdeleted'	=> $topic['topic_posts_softdeleted'],
-			'topic_first_post_id'		=> $topic['topic_first_post_id'],
-			'topic_last_post_id'		=> $topic['topic_last_post_id'],
-			'topic_title'		=> $topic['topic_title'],
-			'forum_name'		=> $forum_name,
-		);
-
-		$subject = $topic['topic_title'];
-		if ($merge)
-		{
-			$data['post_id'] = (int) $last['post_id'];
-			$data['poster_ip'] = $last['poster_ip'];
-			$data['post_visibility'] = $last['post_visibility'];
-			$data['post_subject'] = $last['post_subject'];
-			$subject = $last['post_subject'];
-		}
-		else if (strtolower(substr($subject, 0, 3)) !== 're:')
-		{
-			$subject = 'Re: ' . $subject;
-		}
-
-		$poll = array();
-		return submit_post($merge ? 'edit' : 'reply', $subject, $this->user->data['username'], $topic['topic_type'], $poll, $data, true);
+		return $this->poster->reply($topic_id, $message, $this->actor());
 	}
 }
