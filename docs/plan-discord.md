@@ -10,7 +10,7 @@ Permettre aux joueurs, depuis Discord, de voir les tables des séances à venir 
 - **Le bot est intégré à l'extension.** Les interactions Discord (commandes slash, boutons) sont reçues en HTTP par un contrôleur de l'extension. Il n'y a ni processus permanent ni conteneur supplémentaire.
 - **Les comptes sont liés par un code à usage unique**, généré sur le forum et saisi sur Discord : le membre génère le code dans son UCP, puis tape `/lier CODE` sur Discord. Le pseudo ou l'identifiant Discord saisi dans le profil a été écarté, car n'importe qui pourrait usurper un autre membre.
 - **Une publication par séance future dans un salon « Forum » de Discord.** Le premier message de la publication est le tableau des tables avec les boutons ; il est mis à jour à chaque changement. Les membres discutent librement dans la publication, sous le tableau, qui reste toujours en tête. Pas de commande qui reposte des listes, donc aucun message périmé.
-- **Une séance passée** voit son tableau passer en « Séance terminée », sans boutons, et sa publication reçoit l'étiquette « Terminée ». La publication est conservée.
+- **Une séance passée** voit son tableau passer en « Séance terminée », sans boutons. Sa publication reçoit l'étiquette « Terminée » et est **verrouillée**, comme les sujets sur le forum : elle est conservée et reste lisible, mais on ne peut plus y écrire.
 - **Les confirmations sont publiques** : l'inscription apparaît directement dans le message de la séance. Les refus (J-3, table pleine, déjà engagé…) ne sont visibles que par le joueur concerné.
 - **Le bot n'accède jamais directement à la base** : toutes les actions passent par les règles de l'extension.
 - **Les joueurs apparaissent sous leur pseudo du forum** dans les messages, jamais sous leur pseudo Discord.
@@ -31,7 +31,7 @@ Conséquence purement esthétique : le bot apparaît « hors ligne » dans la li
 1. Créer l'application Discord dans le portail développeur (Applications → New Application) et récupérer l'identifiant de l'application, la clé publique et le jeton du bot.
 2. Disposer d'un serveur Discord de test privé pour la validation.
 3. Créer sur le serveur de la Guilde un salon de type **Forum** pour les séances, avec deux étiquettes : « À venir » et « Terminée ». Fournir l'identifiant du serveur et celui de ce salon.
-4. Donner au bot, sur ce salon : voir le salon, créer des publications, envoyer des messages, intégrer des liens, lire l'historique, gérer les fils (pour changer l'étiquette et le titre d'une publication).
+4. Donner au bot, sur ce salon : voir le salon, créer des publications, envoyer des messages, intégrer des liens, lire l'historique, gérer les fils (pour changer l'étiquette et le titre d'une publication, et la verrouiller).
 
 ## Étape 0 : préparation du code
 
@@ -113,10 +113,11 @@ Les liaisons et déliaisons y sont inscrites.
   - Un refus est indiqué par une réponse éphémère.
   - Un membre non lié reçoit une réponse éphémère « Lie d'abord ton compte » avec un lien vers l'UCP.
 - **Changement fait sur le forum** (inscription, table ouverte, modifiée ou annulée, date changée) : appel à l'API REST pour modifier le tableau (et le titre de la publication si la date a changé). Le délai d'attente est court, et un échec de Discord ne doit jamais faire échouer l'action sur le forum.
-- **Séance passée** (à partir du lendemain) : le tableau passe en « Séance terminée », sans boutons, et la publication reçoit l'étiquette « Terminée ».
+- **Séance passée** (à partir du lendemain) : le tableau passe en « Séance terminée », sans boutons, et la publication reçoit l'étiquette « Terminée » puis est verrouillée.
+- **Date repoussée par un gestionnaire** après verrouillage : la publication est déverrouillée et repasse en « À venir ».
 - **Tâche planifiée** (cron phpBB) :
   - resynchronisation des tableaux des séances futures (rattrape les appels échoués) ;
-  - clôture des séances passées ;
+  - clôture des séances passées (étiquette « Terminée », verrouillage) ;
   - création des publications manquantes pour les séances configurées.
 
 ## Stratégie de test
@@ -131,7 +132,3 @@ Les liaisons et déliaisons y sont inscrites.
 1. Fusion de `v2-dev` dans `v2` sur le forum, puis purge du cache.
 2. Migration `v2_2_0` : désactiver puis réactiver l'extension dans l'ACP. Ne jamais utiliser « Supprimer les données ».
 3. Push sur GitHub et tag `v2.2.0`.
-
-## Points ouverts
-
-- Une publication « Terminée » doit-elle aussi être verrouillée (plus de nouveaux messages) ou archivée ? Par défaut : seulement l'étiquette.
