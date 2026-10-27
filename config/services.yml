@@ -2,6 +2,8 @@ parameters:
     nathannau.boardmanager2.tables.sessions: '%core.table_prefix%bm2_sessions'
     nathannau.boardmanager2.tables.tables: '%core.table_prefix%bm2_tables'
     nathannau.boardmanager2.tables.players: '%core.table_prefix%bm2_players'
+    nathannau.boardmanager2.tables.discord_links: '%core.table_prefix%bm2_discord_links'
+    nathannau.boardmanager2.tables.discord_codes: '%core.table_prefix%bm2_discord_codes'
 
 services:
     nathannau.boardmanager2.store:
@@ -34,6 +36,7 @@ services:
         class: nathannau\boardmanager2\event\listener
         arguments:
             - '@nathannau.boardmanager2.renderer'
+            - '@symfony_request'
         tags:
             - { name: event.listener }
 
@@ -83,5 +86,39 @@ services:
             - '@nathannau.boardmanager2.rules'
             - '%core.root_path%'
             - '%core.php_ext%'
+        tags:
+            - { name: console.command }
+
+    nathannau.boardmanager2.discord_links:
+        class: nathannau\boardmanager2\core\discord_links
+        arguments:
+            - '@dbal.conn'
+            - '@cache.driver'
+            - '%nathannau.boardmanager2.tables.discord_links%'
+            - '%nathannau.boardmanager2.tables.discord_codes%'
+
+    nathannau.boardmanager2.discord_api:
+        class: nathannau\boardmanager2\core\discord_api
+        arguments:
+            - '@config'
+            - '@config_text'
+
+    nathannau.boardmanager2.discord:
+        class: nathannau\boardmanager2\controller\discord
+        arguments:
+            - '@config'
+            - '@symfony_request'
+            - '@language'
+            - '@user'
+            - '@log'
+            - '@nathannau.boardmanager2.discord_links'
+            - '@dbal.conn'
+
+    nathannau.boardmanager2.console.discord_commands:
+        class: nathannau\boardmanager2\console\discord_commands
+        arguments:
+            - '@user'
+            - '@config'
+            - '@nathannau.boardmanager2.discord_api'
         tags:
             - { name: console.command }

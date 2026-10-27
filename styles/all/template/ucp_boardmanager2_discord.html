@@ -1,0 +1,34 @@
+{% include 'ucp_header.html' %}
+
+<h2>{{ lang('UCP_BOARDMANAGER2_DISCORD') }}</h2>
+
+<form id="ucp_boardmanager2_discord" method="post" action="{{ U_ACTION }}">
+<div class="panel">
+	<div class="inner">
+	<p>{{ lang('UCP_BM2_DISCORD_EXPLAIN') }}</p>
+
+	{% if BM2_LINKED %}
+		<p>{{ lang('UCP_BM2_DISCORD_LINKED_TO', BM2_DISCORD_USERNAME, BM2_LINKED_TIME) }}</p>
+	{% elseif BM2_CODE %}
+		<p>{{ lang('UCP_BM2_DISCORD_CODE_INTRO') }}</p>
+		<p class="bm2-discord-code"><code>/lier {{ BM2_CODE }}</code></p>
+		<p>{{ lang('UCP_BM2_DISCORD_CODE_VALIDITY', BM2_CODE_MINUTES) }}</p>
+		<p class="error">{{ lang('UCP_BM2_DISCORD_CODE_WARNING') }}</p>
+	{% else %}
+		<p>{{ lang('UCP_BM2_DISCORD_NOT_LINKED') }}</p>
+		{% if BM2_PENDING %}<p>{{ lang('UCP_BM2_DISCORD_PENDING') }}</p>{% endif %}
+	{% endif %}
+	</div>
+</div>
+
+<fieldset class="submit-buttons">
+	{% if BM2_LINKED %}
+		<input type="submit" name="unlink" value="{{ lang('UCP_BM2_DISCORD_UNLINK') }}" class="button1" />
+	{% else %}
+		<input type="submit" name="generate" value="{{ lang(BM2_CODE ? 'UCP_BM2_DISCORD_NEW_CODE' : 'UCP_BM2_DISCORD_GENERATE') }}" class="button1" />
+	{% endif %}
+	{{ S_FORM_TOKEN }}
+</fieldset>
+</form>
+
+{% include 'ucp_footer.html' %}

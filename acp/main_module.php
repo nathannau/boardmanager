@@ -44,6 +44,10 @@ class main_module
 		{
 			$this->orphans();
 		}
+		else if ($mode === 'discord')
+		{
+			$this->discord();
+		}
 		else
 		{
 			$this->settings();
@@ -180,6 +184,101 @@ class main_module
 		$this->template->assign_vars(array(
 			'U_ACTION'	=> $this->u_action . '&amp;action=move',
 		));
+	}
+
+	/**
+	* Configuration de l'application Discord
+	*/
+	protected function discord()
+	{
+		/** @var \phpbb\config\config $config */
+		$config = $this->container->get('config');
+		/** @var \phpbb\config\db_text $config_text */
+		$config_text = $this->container->get('config_text');
+		/** @var \nathannau\boardmanager2\core\discord_api $api */
+		$api = $this->container->get('nathannau.boardmanager2.discord_api');
+
+		$this->tpl_name = 'acp_boardmanager2_discord';
+		$this->page_title = 'ACP_BOARDMANAGER2_DISCORD';
+		$form_key = 'nathannau_boardmanager2_discord';
+		add_form_key($form_key);
+		$errors = array();
+		$check = '';
+
+		$values = array(
+			'bm2_discord_enabled'		=> (int) $config['bm2_discord_enabled'],
+			'bm2_discord_app_id'		=> $config['bm2_discord_app_id'],
+			'bm2_discord_public_key'	=> $config['bm2_discord_public_key'],
+			'bm2_discord_guild_id'		=> $config['bm2_discord_guild_id'],
+			'bm2_discord_channel_id'	=> $config['bm2_discord_channel_id'],
+		);
+
+		if ($this->request->is_set_post('submit') || $this->request->is_set_post('check'))
+		{
+			if (!check_form_key($form_key))
+			{
+				trigger_error($this->language->lang('FORM_INVALID') . adm_back_link($this->u_action), E_USER_WARNING);
+			}
+		}
+
+		if ($this->request->is_set_post('submit'))
+		{
+			$values = array(
+				'bm2_discord_enabled'		=> $this->request->variable('bm2_discord_enabled', 0) ? 1 : 0,
+				'bm2_discord_app_id'		=> trim($this->request->variable('bm2_discord_app_id', '')),
+				'bm2_discord_public_key'	=> strtolower(trim($this->request->variable('bm2_discord_public_key', ''))),
+				'bm2_discord_guild_id'		=> trim($this->request->variable('bm2_discord_guild_id', '')),
+				'bm2_discord_channel_id'	=> trim($this->request->variable('bm2_discord_channel_id', '')),
+			);
+			foreach (array('bm2_discord_app_id', 'bm2_discord_guild_id', 'bm2_discord_channel_id') as $key)
+			{
+				if ($values[$key] !== '' && !preg_match('/^\d{15,25}$/', $values[$key]))
+				{
+					$errors[] = $this->language->lang('ACP_BM2_DISCORD_ERROR_ID', $this->language->lang(strtoupper('ACP_' . substr($key, 4))));
+				}
+			}
+			if ($values['bm2_discord_public_key'] !== '' && !preg_match('/^[0-9a-f]{64}$/', $values['bm2_discord_public_key']))
+			{
+				$errors[] = $this->language->lang('ACP_BM2_DISCORD_ERROR_PUBLIC_KEY');
+			}
+			$token = trim($this->request->variable('bm2_discord_bot_token', ''));
+
+			if (!$errors)
+			{
+				foreach ($values as $key => $value)
+				{
+					$config->set($key, $value);
+				}
+				// Jeton laissé vide : on garde le jeton enregistré
+				if ($token !== '')
+				{
+					$config_text->set('bm2_discord_bot_token', $token);
+				}
+				trigger_error($this->language->lang('ACP_BM2_DISCORD_SAVED') . adm_back_link($this->u_action));
+			}
+		}
+
+		if ($this->request->is_set_post('check'))
+		{
+			try
+			{
+				$bot = $api->bot_user();
+				$check = $this->language->lang('ACP_BM2_DISCORD_CHECK_OK', $bot['username']);
+			}
+			catch (\RuntimeException $e)
+			{
+				$errors[] = $this->language->lang('ACP_BM2_DISCORD_CHECK_KO', $e->getMessage());
+			}
+		}
+
+		$this->template->assign_vars(array_merge(array_change_key_case($values, CASE_UPPER), array(
+			'BM2_ERRORS'			=> $errors,
+			'BM2_CHECK'				=> $check,
+			'BM2_TOKEN_SET'			=> trim((string) $config_text->get('bm2_discord_bot_token')) !== '',
+			'BM2_ENDPOINT_URL'		=> generate_board_url() . '/app.php/boardmanager2/discord',
+			'BM2_INVITE_URL'		=> $config['bm2_discord_app_id'] !== '' ? $api->invite_url() : '',
+			'U_ACTION'				=> $this->u_action,
+		)));
 	}
 
 	/**

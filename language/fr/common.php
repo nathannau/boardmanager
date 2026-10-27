@@ -115,6 +115,15 @@ $lang = array_merge($lang, array(
 	'BM2_ERROR_NOT_TEMPORARY'		=> 'Ce joueur n’est pas pré-inscrit.',
 	'BM2_ERROR_NOT_REGISTERED'		=> 'Vous n’êtes pas inscrit ici.',
 
+	// Discord (réponses du bot, visibles seulement par le membre)
+	'BM2_DISCORD_MAINTENANCE'		=> 'Le forum est en maintenance, réessaie un peu plus tard.',
+	'BM2_DISCORD_DISABLED'			=> 'Le bot de la Guilde n’est pas encore activé.',
+	'BM2_DISCORD_UNKNOWN'			=> 'Je ne connais pas cette action.',
+	'BM2_DISCORD_LINKED'			=> 'C’est fait : ton compte Discord est lié au compte du forum **%s**.',
+	'BM2_DISCORD_CODE_INVALID'		=> 'Ce code n’est pas valable ou a expiré. Génère un nouveau code dans ton profil du forum (Profil → Discord).',
+	'BM2_DISCORD_TOO_MANY_TRIES'	=> 'Trop de codes erronés : réessaie dans un quart d’heure.',
+	'BM2_DISCORD_ALREADY_LINKED_OTHER'	=> 'Ce compte Discord est déjà lié à un autre compte du forum. Délie-le d’abord depuis ce compte (Profil → Discord).',
+
 	// Messages auto
 	'BM2_AUTO_CONFIGURE'			=> 'Message auto : Séance configurée au %s',
 	'BM2_AUTO_REGISTER_NO_TABLE'	=> 'Message auto : Inscription en sans table',

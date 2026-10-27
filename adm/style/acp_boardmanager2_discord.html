@@ -1,0 +1,70 @@
+{% include 'overall_header.html' %}
+
+<h1>{{ lang('ACP_BOARDMANAGER2_DISCORD') }}</h1>
+<p>{{ lang('ACP_BM2_DISCORD_EXPLAIN') }}</p>
+
+{% if BM2_ERRORS %}<div class="errorbox"><p>{{ BM2_ERRORS|join('<br />') }}</p></div>{% endif %}
+{% if BM2_CHECK %}<div class="successbox"><p>{{ BM2_CHECK }}</p></div>{% endif %}
+
+<form id="acp_boardmanager2_discord" method="post" action="{{ U_ACTION }}">
+	<fieldset>
+		<legend>{{ lang('ACP_BM2_DISCORD_APPLICATION') }}</legend>
+		<dl>
+			<dt><label>{{ lang('ACP_BM2_DISCORD_ENABLED') }}{{ lang('COLON') }}</label><br /><span>{{ lang('ACP_BM2_DISCORD_ENABLED_EXPLAIN') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" name="bm2_discord_enabled" value="1"{% if BM2_DISCORD_ENABLED %} checked="checked"{% endif %} /> {{ lang('YES') }}</label>
+				<label><input type="radio" class="radio" name="bm2_discord_enabled" value="0"{% if not BM2_DISCORD_ENABLED %} checked="checked"{% endif %} /> {{ lang('NO') }}</label>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="bm2_discord_app_id">{{ lang('ACP_DISCORD_APP_ID') }}{{ lang('COLON') }}</label><br /><span>{{ lang('ACP_BM2_DISCORD_APP_ID_EXPLAIN') }}</span></dt>
+			<dd><input type="text" id="bm2_discord_app_id" name="bm2_discord_app_id" size="25" value="{{ BM2_DISCORD_APP_ID }}" /></dd>
+		</dl>
+		<dl>
+			<dt><label for="bm2_discord_public_key">{{ lang('ACP_DISCORD_PUBLIC_KEY') }}{{ lang('COLON') }}</label></dt>
+			<dd><input type="text" id="bm2_discord_public_key" name="bm2_discord_public_key" size="70" value="{{ BM2_DISCORD_PUBLIC_KEY }}" /></dd>
+		</dl>
+		<dl>
+			<dt><label for="bm2_discord_bot_token">{{ lang('ACP_BM2_DISCORD_BOT_TOKEN') }}{{ lang('COLON') }}</label><br /><span>{{ lang(BM2_TOKEN_SET ? 'ACP_BM2_DISCORD_BOT_TOKEN_SET' : 'ACP_BM2_DISCORD_BOT_TOKEN_EXPLAIN') }}</span></dt>
+			<dd><input type="password" id="bm2_discord_bot_token" name="bm2_discord_bot_token" size="70" value="" autocomplete="off" /></dd>
+		</dl>
+	</fieldset>
+
+	<fieldset>
+		<legend>{{ lang('ACP_BM2_DISCORD_SERVER') }}</legend>
+		<dl>
+			<dt><label for="bm2_discord_guild_id">{{ lang('ACP_DISCORD_GUILD_ID') }}{{ lang('COLON') }}</label></dt>
+			<dd><input type="text" id="bm2_discord_guild_id" name="bm2_discord_guild_id" size="25" value="{{ BM2_DISCORD_GUILD_ID }}" /></dd>
+		</dl>
+		<dl>
+			<dt><label for="bm2_discord_channel_id">{{ lang('ACP_DISCORD_CHANNEL_ID') }}{{ lang('COLON') }}</label><br /><span>{{ lang('ACP_BM2_DISCORD_CHANNEL_ID_EXPLAIN') }}</span></dt>
+			<dd><input type="text" id="bm2_discord_channel_id" name="bm2_discord_channel_id" size="25" value="{{ BM2_DISCORD_CHANNEL_ID }}" /></dd>
+		</dl>
+	</fieldset>
+
+	<fieldset>
+		<legend>{{ lang('ACP_BM2_DISCORD_SETUP') }}</legend>
+		<dl>
+			<dt><label>{{ lang('ACP_BM2_DISCORD_ENDPOINT') }}{{ lang('COLON') }}</label><br /><span>{{ lang('ACP_BM2_DISCORD_ENDPOINT_EXPLAIN') }}</span></dt>
+			<dd><code>{{ BM2_ENDPOINT_URL }}</code></dd>
+		</dl>
+		{% if BM2_INVITE_URL %}
+		<dl>
+			<dt><label>{{ lang('ACP_BM2_DISCORD_INVITE') }}{{ lang('COLON') }}</label><br /><span>{{ lang('ACP_BM2_DISCORD_INVITE_EXPLAIN') }}</span></dt>
+			<dd><a href="{{ BM2_INVITE_URL }}" target="_blank" rel="noopener">{{ lang('ACP_BM2_DISCORD_INVITE_LINK') }}</a></dd>
+		</dl>
+		{% endif %}
+		<dl>
+			<dt><label>{{ lang('ACP_BM2_DISCORD_COMMANDS') }}{{ lang('COLON') }}</label><br /><span>{{ lang('ACP_BM2_DISCORD_COMMANDS_EXPLAIN') }}</span></dt>
+			<dd><code>php bin/phpbbcli.php boardmanager2:discord-commands</code></dd>
+		</dl>
+	</fieldset>
+
+	<fieldset class="submit-buttons">
+		<input class="button1" type="submit" name="submit" value="{{ lang('SUBMIT') }}" />
+		<input class="button2" type="submit" name="check" value="{{ lang('ACP_BM2_DISCORD_CHECK') }}" />
+		{{ S_FORM_TOKEN }}
+	</fieldset>
+</form>
+
+{% include 'overall_footer.html' %}

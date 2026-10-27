@@ -18,12 +18,19 @@ class listener implements EventSubscriberInterface
 	/** Rendu du BBCode marqueur, remplacé par la séance dans viewtopic */
 	const MARKER = '<div class="bm2-session"></div>';
 
+	/** Route des interactions Discord */
+	const DISCORD_PATH = '/boardmanager2/discord';
+
 	/** @var renderer */
 	protected $renderer;
 
-	public function __construct(renderer $renderer)
+	/** @var \Symfony\Component\HttpFoundation\Request */
+	protected $symfony_request;
+
+	public function __construct(renderer $renderer, \Symfony\Component\HttpFoundation\Request $symfony_request)
 	{
 		$this->renderer = $renderer;
+		$this->symfony_request = $symfony_request;
 	}
 
 	static public function getSubscribedEvents()
@@ -31,6 +38,7 @@ class listener implements EventSubscriberInterface
 		return array(
 			'core.text_formatter_s9e_configure_after'	=> 'configure_bbcode',
 			'core.viewtopic_modify_post_row'			=> 'render_session',
+			'core.user_setup_after'						=> 'allow_discord_in_maintenance',
 		);
 	}
 
@@ -47,6 +55,18 @@ class listener implements EventSubscriberInterface
 		unset($configurator->tags['BOARDMANAGER2']);
 
 		$configurator->BBCodes->addCustom('[boardmanager2][/boardmanager2]', self::MARKER);
+	}
+
+	/**
+	* Le mode maintenance ne doit pas bloquer les requêtes de Discord : le contrôleur
+	* répond lui-même « forum en maintenance » au membre.
+	*/
+	public function allow_discord_in_maintenance()
+	{
+		if (!defined('SKIP_CHECK_DISABLED') && $this->symfony_request->getPathInfo() === self::DISCORD_PATH)
+		{
+			define('SKIP_CHECK_DISABLED', true);
+		}
 	}
 
 	/**

@@ -28,6 +28,11 @@ class main_info
 					'auth'	=> 'ext_nathannau/boardmanager2 && acl_a_board',
 					'cat'	=> array('ACP_BOARDMANAGER2_TITLE'),
 				),
+				'discord'	=> array(
+					'title'	=> 'ACP_BOARDMANAGER2_DISCORD',
+					'auth'	=> 'ext_nathannau/boardmanager2 && acl_a_board',
+					'cat'	=> array('ACP_BOARDMANAGER2_TITLE'),
+				),
 			),
 		);
 	}

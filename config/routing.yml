@@ -45,3 +45,7 @@ nathannau_boardmanager2_removeplayer:
     defaults: { _controller: nathannau.boardmanager2.main:removeplayer }
     requirements:
         player: \d+
+nathannau_boardmanager2_discord:
+    path: /boardmanager2/discord
+    defaults: { _controller: nathannau.boardmanager2.discord:interactions }
+    methods: [POST]

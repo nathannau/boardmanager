@@ -41,3 +41,4 @@
 .bm2-form dl dd textarea { height: 100px; }
 .bm2-form .bm2-checkbox { width: auto; }
 .bm2-form .bm2-errors { color: #b00; margin-bottom: 1em; }
+.bm2-discord-code code { font-size: 1.6em; padding: 4px 10px; letter-spacing: 0.1em; }
