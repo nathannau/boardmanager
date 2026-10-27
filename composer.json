@@ -3,7 +3,7 @@
 	"type": "phpbb-extension",
 	"description": "Une extension pour phpBB pour automatiser la gestion de la mise en place des tables.",
 	"homepage": "https://www.phpbb.com",
-	"version": "2.1.0",
+	"version": "2.2.0",
 	"keywords": ["phpbb", "extension", "la guilde", "mise en place des tables"],
 	"license": "MIT",
 	"authors": [
