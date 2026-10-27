@@ -53,6 +53,15 @@ Les gestionnaires sont les membres des groupes choisis dans **ACP → Extensions
 - ajouter ou retirer n'importe quel joueur, valider une pré-inscription ;
 - passer outre la règle des 3 jours et le nombre maximum de joueurs.
 
+### Séances orphelines
+
+Supprimer un sujet ne supprime pas sa séance. Les séances dont le sujet n'existe plus sont listées dans **ACP → Extensions → Board Manager → Séances orphelines**, où un administrateur peut :
+
+- les **réaffecter** à un autre sujet (lien du sujet ou d'un de ses messages, ou numéro du sujet), qui doit contenir `[boardmanager2][/boardmanager2]` et ne pas avoir déjà de séance ;
+- les **supprimer** définitivement, avec leurs tables et leurs joueurs.
+
+Chaque action est inscrite dans le journal d'administration.
+
 ## Import des séances v1
 
 Jusqu'à la v1.1, la séance était écrite dans le texte du message (`[boardmanager JJMMAAAA]…[/boardmanager]`). La commande suivante importe ces séances en base :
@@ -77,6 +86,7 @@ Bascule conseillée : sauvegarde de la base, forum désactivé, `--dry-run`, pui
 | Dossier / fichier | Rôle |
 |---|---|
 | `migrations/v2_0_0.php` | Tables, module ACP, groupes gestionnaires par défaut |
+| `migrations/v2_0_1.php` | Page ACP des séances orphelines |
 | `event/listener.php` | Déclaration du BBCode marqueur, affichage de la séance dans le sujet |
 | `controller/main.php` | Actions (configurer, ouvrir, modifier, s'inscrire, annuler, ajouter, valider, retirer) |
 | `core/store.php` | Accès aux tables `bm2_*` |
@@ -84,7 +94,7 @@ Bascule conseillée : sauvegarde de la base, forum désactivé, `--dry-run`, pui
 | `core/renderer.php` | Données du template de la séance |
 | `core/legacy/` | Lecteurs du format v1, utilisés par l'import |
 | `console/import_v1.php` | Commande d'import |
-| `acp/`, `adm/style/` | Page ACP des groupes gestionnaires |
+| `acp/`, `adm/style/` | Pages ACP : groupes gestionnaires, séances orphelines |
 | `styles/all/` | Templates et CSS |
 | `language/fr/` | Textes |
 

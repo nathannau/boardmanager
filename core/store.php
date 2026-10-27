@@ -105,6 +105,57 @@ class store
 		$this->add_no_table($session_id);
 	}
 
+	/**
+	* Séances dont le sujet n'existe plus, avec leur nombre de tables et de joueurs
+	*/
+	public function get_orphan_sessions()
+	{
+		return $this->fetch_all('SELECT s.*,
+				(SELECT COUNT(*) FROM ' . $this->tables_table . ' t
+					WHERE t.session_id = s.session_id AND t.no_table = 0) AS nb_tables,
+				(SELECT COUNT(*) FROM ' . $this->players_table . ' p
+					JOIN ' . $this->tables_table . ' t ON t.table_id = p.table_id
+					WHERE t.session_id = s.session_id) AS nb_players
+			FROM ' . $this->sessions_table . ' s
+			LEFT JOIN ' . TOPICS_TABLE . ' tp ON tp.topic_id = s.topic_id
+			WHERE tp.topic_id IS NULL
+			ORDER BY s.session_date DESC');
+	}
+
+	public function is_orphan(array $session)
+	{
+		return !$this->topic_exists($session['topic_id']);
+	}
+
+	public function topic_exists($topic_id)
+	{
+		return (bool) $this->fetch_one('SELECT topic_id FROM ' . TOPICS_TABLE . ' WHERE topic_id = ' . (int) $topic_id);
+	}
+
+	/**
+	* Rattache une séance à un autre sujet
+	*/
+	public function move_session($session_id, $topic_id)
+	{
+		$this->db->sql_query('UPDATE ' . $this->sessions_table . '
+			SET topic_id = ' . (int) $topic_id . '
+			WHERE session_id = ' . (int) $session_id);
+	}
+
+	/**
+	* Supprime définitivement une séance, ses tables et ses joueurs
+	*/
+	public function delete_session($session_id)
+	{
+		$table_ids = array_map('intval', array_column($this->get_tables($session_id, true), 'table_id'));
+		if ($table_ids)
+		{
+			$this->db->sql_query('DELETE FROM ' . $this->players_table . ' WHERE ' . $this->db->sql_in_set('table_id', $table_ids));
+			$this->db->sql_query('DELETE FROM ' . $this->tables_table . ' WHERE ' . $this->db->sql_in_set('table_id', $table_ids));
+		}
+		$this->db->sql_query('DELETE FROM ' . $this->sessions_table . ' WHERE session_id = ' . (int) $session_id);
+	}
+
 	// Tables
 
 	public function get_table($table_id)

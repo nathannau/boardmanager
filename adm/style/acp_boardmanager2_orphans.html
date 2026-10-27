@@ -1,0 +1,43 @@
+{% include 'overall_header.html' %}
+
+<h1>{{ lang('ACP_BOARDMANAGER2_ORPHANS') }}</h1>
+<p>{{ lang('ACP_BOARDMANAGER2_ORPHANS_EXPLAIN') }}</p>
+
+{% if bm2_orphans %}
+<form id="acp_boardmanager2_orphans" method="post" action="{{ U_ACTION }}">
+	<table class="table1 zebra-table">
+		<thead>
+			<tr>
+				<th>{{ lang('ACP_BOARDMANAGER2_ORPHAN_DATE') }}</th>
+				<th>{{ lang('ACP_BOARDMANAGER2_ORPHAN_TOPIC') }}</th>
+				<th>{{ lang('ACP_BOARDMANAGER2_ORPHAN_SOURCE') }}</th>
+				<th>{{ lang('ACP_BOARDMANAGER2_ORPHAN_TABLES') }}</th>
+				<th>{{ lang('ACP_BOARDMANAGER2_ORPHAN_PLAYERS') }}</th>
+				<th>{{ lang('ACP_BOARDMANAGER2_ORPHAN_TARGET') }}</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+		{% for orphan in bm2_orphans %}
+			<tr>
+				<td>{{ orphan.DATE }}</td>
+				<td>{{ orphan.TOPIC_ID }}</td>
+				<td>{{ orphan.SOURCE }}</td>
+				<td>{{ orphan.TABLES }}</td>
+				<td>{{ orphan.PLAYERS }}</td>
+				<td><input type="text" name="target_{{ orphan.ID }}" size="30" placeholder="{{ lang('ACP_BOARDMANAGER2_ORPHAN_TARGET_PLACEHOLDER') }}" /></td>
+				<td>
+					<button type="submit" name="session_id" value="{{ orphan.ID }}" class="button2">{{ lang('ACP_BOARDMANAGER2_ORPHAN_MOVE') }}</button>
+					<a href="{{ orphan.U_DELETE }}" class="button2">{{ lang('ACP_BOARDMANAGER2_ORPHAN_DELETE') }}</a>
+				</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+	{{ S_FORM_TOKEN }}
+</form>
+{% else %}
+<div class="successbox"><p>{{ lang('ACP_BOARDMANAGER2_NO_ORPHANS') }}</p></div>
+{% endif %}
+
+{% include 'overall_footer.html' %}

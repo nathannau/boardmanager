@@ -23,6 +23,11 @@ class main_info
 					'auth'	=> 'ext_nathannau/boardmanager2 && acl_a_board',
 					'cat'	=> array('ACP_BOARDMANAGER2_TITLE'),
 				),
+				'orphans'	=> array(
+					'title'	=> 'ACP_BOARDMANAGER2_ORPHANS',
+					'auth'	=> 'ext_nathannau/boardmanager2 && acl_a_board',
+					'cat'	=> array('ACP_BOARDMANAGER2_TITLE'),
+				),
 			),
 		);
 	}
