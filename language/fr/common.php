@@ -118,11 +118,12 @@ $lang = array_merge($lang, array(
 	// Discord (réponses du bot, visibles seulement par le membre)
 	'BM2_DISCORD_MAINTENANCE'		=> 'Le forum est en maintenance, réessaie un peu plus tard.',
 	'BM2_DISCORD_DISABLED'			=> 'Le bot de la Guilde n’est pas encore activé.',
+	'BM2_DISCORD_WRONG_GUILD'		=> 'Ce bot ne fonctionne que sur le serveur Discord de la Guilde.',
 	'BM2_DISCORD_UNKNOWN'			=> 'Je ne connais pas cette action.',
 	'BM2_DISCORD_LINKED'			=> 'C’est fait : ton compte Discord est lié au compte du forum **%s**.',
 	'BM2_DISCORD_CODE_INVALID'		=> 'Ce code n’est pas valable ou a expiré. Génère un nouveau code dans ton profil du forum (Profil → Discord).',
 	'BM2_DISCORD_TOO_MANY_TRIES'	=> 'Trop de codes erronés : réessaie dans un quart d’heure.',
-	'BM2_DISCORD_NOT_LINKED'		=> 'Pour t’inscrire depuis Discord, lie d’abord ton compte : dans ton profil du forum (Profil → Discord), génère un code puis tape /lier CODE ici. %s',
+	'BM2_DISCORD_NOT_LINKED'		=> 'Pour t’inscrire depuis Discord, lie d’abord ton compte : dans ton profil du forum (Profil → Discord), génère un code, puis ici tape /lier, choisis la commande et colle le code. %s',
 	'BM2_DISCORD_AUTO_PREFIX'		=> 'Message auto :',
 	'BM2_DISCORD_NO_ACCOUNT'		=> 'Le compte du forum lié à ce compte Discord est introuvable ou désactivé.',
 

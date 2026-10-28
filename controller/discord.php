@@ -116,6 +116,13 @@ class discord
 		{
 			return $this->ephemeral($this->language->lang('BM2_DISCORD_DISABLED'));
 		}
+		// Seul le serveur configuré est accepté : les boutons de publications d'un autre serveur
+		// (ancien serveur de test, par exemple) ne doivent pas agir sur les séances du forum
+		$guild_id = isset($interaction['guild_id']) ? (string) $interaction['guild_id'] : '';
+		if ($guild_id !== (string) $this->config['bm2_discord_guild_id'])
+		{
+			return $this->ephemeral($this->language->lang('BM2_DISCORD_WRONG_GUILD'));
+		}
 
 		$discord_user = isset($interaction['member']['user']) ? $interaction['member']['user'] : (isset($interaction['user']) ? $interaction['user'] : null);
 		if (!$discord_user || empty($discord_user['id']))
