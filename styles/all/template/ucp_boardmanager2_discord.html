@@ -11,7 +11,15 @@
 		<p>{{ lang('UCP_BM2_DISCORD_LINKED_TO', BM2_DISCORD_USERNAME, BM2_LINKED_TIME) }}</p>
 	{% elseif BM2_CODE %}
 		<p>{{ lang('UCP_BM2_DISCORD_CODE_INTRO') }}</p>
-		<p class="bm2-discord-code"><code>/lier {{ BM2_CODE }}</code></p>
+		<p class="bm2-discord-code">
+			<code id="bm2-discord-code">{{ BM2_CODE }}</code>
+			<button type="button" class="button" id="bm2-discord-copy" data-copied="{{ lang('UCP_BM2_DISCORD_COPIED') }}">{{ lang('UCP_BM2_DISCORD_COPY') }}</button>
+		</p>
+		<ol class="bm2-discord-steps">
+			<li>{{ lang('UCP_BM2_DISCORD_STEP_COMMAND') }}</li>
+			<li>{{ lang('UCP_BM2_DISCORD_STEP_PASTE') }}</li>
+			<li>{{ lang('UCP_BM2_DISCORD_STEP_SEND') }}</li>
+		</ol>
 		<p>{{ lang('UCP_BM2_DISCORD_CODE_VALIDITY', BM2_CODE_MINUTES) }}</p>
 		<p class="error">{{ lang('UCP_BM2_DISCORD_CODE_WARNING') }}</p>
 	{% else %}
@@ -30,5 +38,31 @@
 	{{ S_FORM_TOKEN }}
 </fieldset>
 </form>
+
+<script>
+(function () {
+	var button = document.getElementById('bm2-discord-copy');
+	if (!button) {
+		return;
+	}
+	button.addEventListener('click', function () {
+		var code = document.getElementById('bm2-discord-code').textContent;
+		var done = function () {
+			button.textContent = button.getAttribute('data-copied');
+		};
+		if (navigator.clipboard && window.isSecureContext) {
+			navigator.clipboard.writeText(code).then(done);
+		} else {
+			var range = document.createRange();
+			range.selectNodeContents(document.getElementById('bm2-discord-code'));
+			window.getSelection().removeAllRanges();
+			window.getSelection().addRange(range);
+			if (document.execCommand('copy')) {
+				done();
+			}
+		}
+	});
+})();
+</script>
 
 {% include 'ucp_footer.html' %}

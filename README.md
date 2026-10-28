@@ -216,7 +216,7 @@ Une application Discord n'a qu'une seule URL d'interactions : avec un forum de t
    php bin/phpbbcli.php cron:run cron.task.nathannau.boardmanager2.discord_sync
    ```
 
-4. Annoncer aux membres : **Profil → Discord → Générer un code**, puis `/lier CODE` sur le serveur Discord.
+4. Annoncer aux membres : **Profil → Discord → Générer un code**, puis sur le serveur Discord taper `/lier`, **choisir la commande dans la liste** et coller le code dans le champ proposé. Coller « /lier CODE » d'un bloc ne fonctionne pas : Discord ne déclenche une commande que si on la choisit dans la liste.
 
 La tâche cron de phpBB doit tourner : avec le cron « web » de phpBB (réglage par défaut), elle est déclenchée par les visites du forum ; avec le cron système, elle doit être planifiée.
 
